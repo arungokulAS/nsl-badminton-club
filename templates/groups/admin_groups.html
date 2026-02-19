@@ -1,0 +1,216 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="groups-admin-content" style="position:relative;z-index:1;margin-top:110px;">
+    <h2 style="text-align:center;">Groups Management</h2>
+    {% if is_locked %}
+        <div class="locked-msg">Groups are locked. No changes allowed.</div>
+    {% endif %}
+    {% if not is_locked and not groups %}
+    <!-- Step 1: Create groups -->
+    <form method="post" style="margin-bottom:24px;display:flex;gap:12px;align-items:center;justify-content:center;background:none !important;border:none !important;box-shadow:none !important;">
+        {% csrf_token %}
+        <label for="num_groups" style="color:#fff;font-weight:500;">Number of Groups:</label>
+        <select name="num_groups" id="num_groups" required class="glass-input" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); margin: 0 8px 0 0; min-width: 120px; max-width: 100%; letter-spacing: 0.02em;">
+            {% for i in group_range %}
+            <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" name="create_groups" class="neon-icon-btn glass-btn" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 84px; min-height: 32px; letter-spacing: 0.01em; text-align: center; user-select: none; overflow: hidden;">Create Groups</button>
+    </form>
+    {% endif %}
+
+    {% if not is_locked and groups %}
+    <!-- Step 2: Move teams between groups -->
+    <form method="post" style="margin:24px auto;max-width:600px;display:flex;gap:4px;align-items:center;justify-content:center;background:none !important;border:none !important;box-shadow:none !important;padding:16px;border-radius:8px;">
+        {% csrf_token %}
+        <label for="move_team_id" style="color:#fff;font-weight:500;">Move Team:</label>
+        <select name="move_team_id" id="move_team_id" required class="glass-input" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); margin: 0 8px 0 0; min-width: 120px; max-width: 100%; letter-spacing: 0.02em;">
+            <option value="">Select Team</option>
+            {% for group in groups %}
+                {% for team in group.teams.all %}
+                    <option value="{{ team.id }}">{{ team.team_name }} (Group {{ group.group_name }})</option>
+                {% endfor %}
+            {% endfor %}
+        </select>
+        <label for="target_group" style="color:#fff;font-weight:500;">To Group:</label>
+        <select name="target_group" id="target_group" required class="glass-input" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); margin: 0 8px 0 0; min-width: 120px; max-width: 100%; letter-spacing: 0.02em;">
+            <option value="">Select Group</option>
+            {% for group in groups %}
+                <option value="{{ group.id }}">Group {{ group.group_name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit" name="move_team" class="neon-icon-btn glass-btn" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 84px; min-height: 32px; letter-spacing: 0.01em; text-align: center; user-select: none; overflow: hidden;">Move</button>
+    </form>
+    <!-- Step 3: Lock groups -->
+    <form method="post" style="margin:0 auto 24px auto;max-width:400px;display:flex;gap:4px;align-items:center;justify-content:center;background:none !important;border:none !important;box-shadow:none !important;padding:12px;border-radius:8px;">
+        {% csrf_token %}
+        <input type="password" name="admin_password" placeholder="Admin Password" required class="glass-input" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); margin: 0 8px 0 0; min-width: 120px; max-width: 100%; letter-spacing: 0.02em;">
+        <button type="submit" name="lock_groups" class="neon-icon-btn glass-btn" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 84px; min-height: 32px; letter-spacing: 0.01em; text-align: center; user-select: none; overflow: hidden;">Lock Groups</button>
+    </form>
+    {% endif %}
+    <div class="groups-list" id="groups-list">
+        {% for group in groups %}
+        <div class="group-block">
+            <h3>Group {{ group.group_name }}</h3>
+            <ul>
+                {% for team in group.teams.all %}
+                <li class="team-name">{{ team.team_name }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<style>
+body {
+    background: url('/static/envato-labs-image-edit (1).png') center center/cover no-repeat fixed, linear-gradient(120deg, #1a1a2e 0%, #16213e 100%) !important;
+    color: #fff !important;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.groups-admin-container {
+    max-width: 1100px;
+    margin: 48px auto 40px auto;
+    background: none !important;
+    border: none !important;
+    border-radius: 28px;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 38px 36px 36px 36px;
+    color: #fff;
+}
+.locked-msg {
+    color: #ff6b6b;
+    margin-bottom: 16px;
+    text-align: center;
+    font-weight: 500;
+    letter-spacing: 0.01em;
+}
+.groups-list {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    column-gap: 6px;
+    row-gap: 40px;
+    justify-items: center;
+}
+    .group-block {
+        background: none !important;
+        border: none !important;
+        box-shadow: none !important;
+        border-radius: 18px;
+        padding: 18px 28px 18px 28px;
+        min-width: 220px;
+    max-width: 340px;
+    width: 100%;
+    box-shadow: none !important;
+    border: 1.5px solid rgba(128,0,255,0.75) !important;
+    box-shadow: 0 0 12px 2px rgba(128,0,255,0.32), 0 0 0 2px rgba(128,0,255,0.18) inset;
+    box-sizing: border-box;
+    overflow-x: auto;
+    color: #fff;
+}
+.group-block h3 {
+    margin-top: 0;
+    text-align: center;
+    color: #fff !important;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    background: linear-gradient(120deg, rgba(128,0,255,0.32) 0%, rgba(80,0,120,0.32) 100%) !important;
+    border-radius: 12px 12px 0 0;
+    padding: 10px 0 10px 0;
+    box-shadow: 0 2px 12px 0 rgba(128,0,255,0.10);
+}
+.group-block ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+}
+.group-block li {
+    margin: 0;
+    white-space: nowrap;
+    overflow-x: auto;
+    text-overflow: unset;
+    max-width: 100%;
+    font-size: 1.08em;
+    padding: 10px 0 10px 0;
+    border-bottom: 1px solid rgba(128,0,255,0.25);
+    box-shadow: none;
+}
+.group-block li:last-child {
+    border-bottom: none;
+}
+/* Neon/Glass effect for buttons and inputs */
+form button, form input, form select {
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    font-size: 1.02em;
+    font-weight: 500;
+    border-radius: 12px;
+    border: 1.5px solid #2e2e4d;
+    outline: none;
+    box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18);
+    transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), border 0.18s;
+}
+form input, form select {
+    background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%);
+    color: #fff;
+    padding: 0.32em 1em;
+    margin: 0 8px 0 0;
+    min-width: 120px;
+    max-width: 100%;
+    letter-spacing: 0.02em;
+}
+form input:focus, form select:focus {
+    border: 1.5px solid #aee6ff;
+    box-shadow: 0 4px 18px 0 rgba(120,80,255,0.28);
+}
+form button {
+    background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%);
+    color: #fff;
+    padding: 0.32em 1em;
+    min-width: 84px;
+    min-height: 32px;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    font-weight: 500;
+    cursor: pointer;
+    margin: 0 4px;
+    outline: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset;
+    transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s;
+    position: relative;
+    z-index: 1;
+}
+form button:hover, form button:focus {
+    background: linear-gradient(120deg, rgba(80,180,255,1) 0%, rgba(120,80,255,1) 100%);
+    border: 1.5px solid #aee6ff;
+    box-shadow: 0 6px 24px 0 rgba(120,80,255,0.38), 0 0 0 4px #aee6ff inset;
+}
+form button:active {
+    background: linear-gradient(120deg, rgba(40,20,80,0.92) 0%, rgba(60,30,120,0.92) 100%);
+    box-shadow: 0 1.5px 6px 0 rgba(120,80,255,0.12), 0 0 0 2px rgba(120,80,255,0.16) inset;
+}
+form button:disabled {
+    opacity: 0.48;
+    background: linear-gradient(120deg, rgba(60,60,60,0.32) 0%, rgba(80,80,80,0.28) 100%);
+    box-shadow: none;
+    cursor: not-allowed;
+    filter: grayscale(0.2);
+}
+</style>
+<script>
+// Ensure all group blocks have the same width based on the largest team name
+document.addEventListener('DOMContentLoaded', function() {
+    const teamNames = Array.from(document.querySelectorAll('.team-name'));
+    let maxWidth = 0;
+    teamNames.forEach(el => {
+        const width = el.offsetWidth;
+        if (width > maxWidth) maxWidth = width;
+    });
+    // Add some padding
+    maxWidth += 60;
+    document.querySelectorAll('.group-block').forEach(block => {
+        block.style.setProperty('--group-block-width', maxWidth + 'px');
+    });
+});
+</script>
+{% endblock %}

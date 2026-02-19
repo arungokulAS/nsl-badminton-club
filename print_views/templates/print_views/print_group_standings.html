@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Printable Group Standings</h1>
+{% for group in groups %}
+    <h2>Group {{ group.group_name }}</h2>
+    <table border="1" cellspacing="0" cellpadding="6">
+        <thead>
+            <tr>
+                <th>Team</th>
+                <th>Wins</th>
+                <th>Losses</th>
+                <th>Points</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for team in group.teams.all %}
+            <tr>
+                <td>{{ team.team_name }}</td>
+                <td>{{ standings|get_item:team.id|get_item:'wins'|default:0 }}</td>
+                <td>{{ standings|get_item:team.id|get_item:'losses'|default:0 }}</td>
+                <td>{{ standings|get_item:team.id|get_item:'points'|default:0 }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+{% endfor %}
+<button onclick="window.print()">Print</button>
+{% endblock %}

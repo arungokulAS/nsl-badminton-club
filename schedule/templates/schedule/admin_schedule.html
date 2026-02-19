@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block content %}
+<div style="margin-top:110px;"></div>
+<h2 style="text-align:center;margin-bottom:8px;color:#fff;">Admin Schedule Management</h2>
+{% if messages %}
+<ul class="messages" style="max-width:600px;margin:0 auto 18px auto;padding:0;list-style:none;">
+    {% for message in messages %}
+        <li style="background:rgba(128,0,255,0.10);color:#fff;padding:10px 18px;margin-bottom:8px;border-radius:8px;font-weight:500;">{{ message }}</li>
+    {% endfor %}
+</ul>
+{% endif %}
+<h2 style="text-align:center;margin-bottom:18px;color:#fff;">Schedule</h2>
+<!-- Removed Schedule System info text -->
+<div style="display:flex;justify-content:center;width:100%;">
+    {% if not locked_num_courts %}
+    <form method="post" style="display:flex;gap:12px;align-items:center;background:none;border:none;padding:12px 0;">
+        {% csrf_token %}
+        <label for="num_courts" style="font-weight:500;color:#fff;background:rgba(128,0,255,0.18);padding:4px 10px;border-radius:8px;">Number of Courts:</label>
+        <select name="num_courts" id="num_courts" required>
+            <option value="">Select</option>
+            {% for i in court_range %}
+                <option value="{{ i }}">{{ i }}</option>
+            {% endfor %}
+        </select>
+        <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;">
+        <button type="submit" name="generate_schedule" style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:6px 18px;font-weight:600;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);">Generate Schedule & Lock</button>
+    </form>
+    {% else %}
+    <div style="display:flex;gap:12px;align-items:center;background:none;border:none;padding:12px 0;">
+        <span style="font-weight:500;color:#fff;background:rgba(128,0,255,0.18);padding:4px 10px;border-radius:8px;">Courts locked: <b>{{ locked_num_courts }}</b></span>
+        <form method="post" style="display:inline;">
+            {% csrf_token %}
+            <input type="password" name="admin_password" placeholder="Admin Password to Unlock" required style="border-radius:8px;padding:4px 10px;">
+            <button type="submit" name="unlock_courts" style="background:linear-gradient(120deg,rgba(255,0,128,0.32) 0%,rgba(120,0,80,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:6px 18px;font-weight:600;box-shadow:0 2px 12px 0 rgba(255,0,128,0.10);">Unlock Court Selection</button>
+        </form>
+    </div>
+    {% endif %}
+</div>
+
+<!-- Round Selector -->
+<div style="display:flex;justify-content:center;gap:18px;margin:24px 0 32px 0;">
+    {% for round in rounds %}
+        <a href="?show_round={{ round.id }}" style="padding:8px 18px;border-radius:18px;font-weight:600;font-size:1.08em;text-decoration:none;color:{% if show_round|default:rounds.0.id == round.id %}#fff{% else %}#a020f0{% endif %};background:{% if show_round|default:rounds.0.id == round.id %}linear-gradient(120deg,rgba(128,0,255,0.32),rgba(80,0,120,0.32)){% else %}none{% endif %};transition:background 0.18s;">{{ round.name }}</a>
+    {% endfor %}
+</div>
+<!-- Removed horizontal line after form -->
+<div>
+    <h3 style="margin-bottom:8px;color:#a020f0;text-align:center;">{{ selected_round.name }}</h3>
+    {% if not has_matches_for_selected_round %}
+        <div style="color:#c00;text-align:center;">No schedule generated for this round yet.</div>
+    {% else %}
+        {% for court in courts %}
+            <h5 style="color:#a020f0;margin-top:10px;">Court: {{ court.name }}</h5>
+            <table border="1" style="border-radius:12px;box-shadow:0 0 12px 2px rgba(128,0,255,0.32);margin-bottom:18px;">
+                <tr style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;">
+                    <th>Sl No</th>
+                    <th>Group</th>
+                    <th>Team 1</th>
+                    <th>Team 2</th>
+                    <th>Status</th>
+                </tr>
+                {% with sl=0 %}
+                {% for match in matches %}
+                    {% if match.round.id == selected_round.id and match.court.id == court.id %}
+                    {% with sl=sl|add:1 %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
+                        <td>{{ match.team1.team_name }}</td>
+                        <td>{{ match.team2.team_name }}</td>
+                        <td>{{ match.status }}</td>
+                    </tr>
+                    {% endwith %}
+                    {% endif %}
+                {% endfor %}
+                {% endwith %}
+            </table>
+            <div style="color:#fff;text-align:right;font-size:0.98em;margin-bottom:18px;">Total matches on this court: <b>{{ court_match_counts.court.id|default:"0" }}</b></div>
+        {% endfor %}
+    {% endif %}
+</div>
+<form method="post" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:36px;">
+    {% csrf_token %}
+    <input type="hidden" name="round_id" value="{{ selected_round.id }}">
+    <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;min-width:220px;text-align:center;">
+    <button type="submit" name="finish_round" style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:8px 28px;font-weight:600;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);margin-top:8px;">Lock & Finish</button>
+</form>
+{% endblock %}

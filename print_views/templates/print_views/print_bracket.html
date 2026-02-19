@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+{% load print_extras %}
+{% block content %}
+<h2>Printable Tournament Bracket</h2>
+<style>
+@media print {
+    .no-print { display: none; }
+    table { page-break-inside: avoid; }
+}
+</style>
+<button class="no-print" onclick="window.print()">🖨️ Print Bracket</button>
+{% for round in rounds %}
+    <h3>{{ round.name }}</h3>
+    <table border="1">
+        <tr>
+            <th>Court</th>
+            <th>Team 1</th>
+            <th>Team 2</th>
+            <th>Score</th>
+            <th>Winner</th>
+        </tr>
+        {% for match in matches %}
+            {% if match.round.id == round.id %}
+            <tr>
+                <td>{{ match.court.name }}</td>
+                <td>{{ match.team1.team_name }}</td>
+                <td>{{ match.team2.team_name }}</td>
+                <td>
+                    {% if scores|get_item:match.id %}
+                        {{ scores|get_item:match.id.team1_score }} - {{ scores|get_item:match.id.team2_score }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+                <td>
+                    {% if scores|get_item:match.id and scores|get_item:match.id.winner %}
+                        {{ scores|get_item:match.id.winner.team_name }}
+                    {% else %}
+                        -
+                    {% endif %}
+                </td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
+{% endblock %}

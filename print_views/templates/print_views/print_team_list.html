@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Printable Team List</h1>
+<table border="1" cellspacing="0" cellpadding="6">
+    <thead>
+        <tr>
+            <th>Team Name</th>
+            <th>Group</th>
+            <th>Players</th>
+        </tr>
+    </thead>
+    <tbody>
+    {% for team in teams %}
+        <tr>
+            <td>{{ team.name }}</td>
+            <td>{{ team.group.name }}</td>
+            <td>
+                <ul>
+                {% for player in team.players.all %}
+                    <li>{{ player.name }}</li>
+                {% endfor %}
+                </ul>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<button onclick="window.print()">Print</button>
+{% endblock %}

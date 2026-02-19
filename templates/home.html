@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block content %}
+<style>
+  .nsl-logo-anim {
+    opacity: 0;
+    transform: translateY(-60px);
+    animation: slideDownFadeIn 1.2s cubic-bezier(0.23, 1, 0.32, 1) 0.2s forwards;
+    max-width: 340px;
+    width: 80vw;
+    margin: 0 auto 0.05rem auto;
+    display: block;
+  }
+  @keyframes slideDownFadeIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  .nsl-tagline {
+    text-align: center;
+    font-size: 1.2rem;
+    color: #fff;
+    font-weight: 300;
+    letter-spacing: 0.04em;
+    text-shadow: 0 2px 16px rgba(0,0,0,0.25);
+    margin-top: 0;
+    animation: fadeInTagline 1.2s 1s both;
+  }
+  @keyframes fadeInTagline {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+</style>
+<div style="min-height: 80vh; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; margin-top: 7vh;">
+  {% load static %}
+  <img src="{% static 'nsl-name-white copy.png' %}" alt="NSL Logo" class="nsl-logo-anim" style="display: block; margin-left: auto; margin-right: auto;" />
+  <div class="nsl-tagline" style="display: block; margin-left: auto; margin-right: auto;">Bring The Game Into Life</div>
+</div>
+{% endblock %}

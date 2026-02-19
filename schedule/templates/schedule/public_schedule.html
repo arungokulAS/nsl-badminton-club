@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Public Tournament Schedule</h2>
+{% for round in rounds %}
+    <h3>{{ round.name }}</h3>
+    <table border="1">
+        <tr>
+            <th>Court</th>
+            <th>Team 1</th>
+            <th>Team 2</th>
+            <th>Status</th>
+        </tr>
+        {% for match in matches %}
+            {% if match.round.id == round.id %}
+            <tr>
+                <td>{{ match.court.name }}</td>
+                <td>{{ match.team1.team_name }}</td>
+                <td>{{ match.team2.team_name }}</td>
+                <td>{{ match.status }}</td>
+            </tr>
+            {% endif %}
+        {% endfor %}
+    </table>
+{% endfor %}
+{% endblock %}

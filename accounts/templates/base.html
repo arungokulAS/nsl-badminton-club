@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Badminton Tournament Management System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <nav class="navbar">
+        <ul class="nav-icons">
+            <li><a href="/">🏠 Home</a></li>
+            <li><a href="/tournament/teams">🏆 Tournament</a></li>
+            <li><a href="/referee">🧑‍⚖️ Referee</a></li>
+            <li><a href="/print/team">🖨️ Print</a></li>
+            <li><a href="/contact">📞 Contact</a></li>
+            {% if request.session.is_admin %}
+                <li>
+                    <a href="/admin/dashboard">🔒 Admin</a>
+                    <ul class="admin-dropdown">
+                        <li><a href="/admin/teams">Teams</a></li>
+                        <li><a href="/admin/groups">Groups</a></li>
+                        <li><a href="/admin/schedule">Schedule</a></li>
+                        <li><a href="/admin/live-manage">Live Manage</a></li>
+
+                        <li><a href="/admin/logout">Logout</a></li>
+                    </ul>
+                </li>
+            {% else %}
+                <li><a href="/admin/login">🔒 Admin</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+    <div class="background">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

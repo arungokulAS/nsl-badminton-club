@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="teams-admin-container" style="margin-top: 110px;">
+    <h2 style="text-align:center;color:#fff !important;margin-bottom: 0.5em;">Team List</h2>
+    <table class="teams-table" style="background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;position:relative;top:-2px;">
+        <thead style="margin-top:0;">
+            <tr style="background: linear-gradient(90deg, rgba(160,32,240,0.4) 0%, rgba(111,0,255,0.4) 100%);">
+                <th style="color:#fff;">#</th>
+                <th style="color:#fff;text-align:left;">Player 1</th>
+                <th style="color:#fff;text-align:left;">Player 2</th>
+                <th style="color:#fff;text-align:left;">Team Name</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for team in teams %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td style="text-align:left;">{{ team.player1_name }}</td>
+                <td style="text-align:left;">{{ team.player2_name }}</td>
+                <td style="text-align:left;">{{ team.team_name }}</td>
+            </tr>
+            {% if not forloop.last %}
+            <tr>
+                <td colspan="4" style="padding:0;border:none;background:none;">
+                    <div style="height:2px;width:100%;background:linear-gradient(90deg,rgba(128,0,255,0) 0%,rgba(128,0,255,0.25) 50%,rgba(128,0,255,0) 100%);"></div>
+                </td>
+            </tr>
+            {% endif %}
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

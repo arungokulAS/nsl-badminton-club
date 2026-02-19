@@ -1,0 +1,17 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="login-container">
+    <h2>Admin Login</h2>
+    {% if error %}<div class="error">{{ error }}</div>{% endif %}
+    <form method="post">
+        {% csrf_token %}
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+    </form>
+</div>
+<style>
+.login-container { max-width: 400px; margin: 60px auto; background: #fff3; padding: 32px; border-radius: 12px; box-shadow: 0 2px 16px #a020f0; }
+.error { color: #c00; margin-bottom: 12px; }
+</style>
+{% endblock %}

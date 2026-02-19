@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<nav class="tournament-nav" style="margin-bottom:24px;">
+    <a href="/tournament/teams" style="margin-right:16px;font-weight:bold;">Teams</a>
+    <a href="/tournament/groups" style="margin-right:16px;">Groups</a>
+    <a href="/tournament/schedule" style="margin-right:16px;">Schedule</a>
+    <a href="/tournament/live" style="margin-right:16px;">Live</a>
+    <a href="/tournament/results">Results</a>
+</nav>
+<h2>Participating Teams</h2>
+<table border="1">
+    <tr>
+        <th>Team Name</th>
+        <th>Player 1</th>
+        <th>Player 2</th>
+    </tr>
+    <tbody id="teams-table-body">
+        {% for team in teams %}
+        <tr>
+            <td>{{ team.team_name }}</td>
+            <td>{{ team.player1_name }}</td>
+            <td>{{ team.player2_name }}</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+<script src="/static/teams/public_teams.js"></script>
+{% endblock %}

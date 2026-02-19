@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Live Matches</h2>
+<table border="1">
+    <tr>
+        <th>Round</th>
+        <th>Court</th>
+        <th>Team 1</th>
+        <th>Team 2</th>
+        <th>Status</th>
+    </tr>
+    {% for match in matches %}
+    <tr>
+        <td>{{ match.round.name }}</td>
+        <td>{{ match.court.name }}</td>
+        <td>{{ match.team1.team_name }}</td>
+        <td>{{ match.team2.team_name }}</td>
+        <td>{{ match.status }}</td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

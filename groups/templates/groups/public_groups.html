@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Groups</h2>
+<table border="1">
+    <tr>
+        <th>Group Name</th>
+        <th>Teams</th>
+    </tr>
+    {% for group in groups %}
+    <tr>
+        <td>{{ group.group_name }}</td>
+        <td>
+            {% for team in group.teams.all %}{{ team.team_name }}{% if not forloop.last %}, {% endif %}{% endfor %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

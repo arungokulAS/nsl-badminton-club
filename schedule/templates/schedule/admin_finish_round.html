@@ -1,0 +1,16 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Finish & Lock Current Round</h2>
+{% if current_round %}
+    <p>Current Round: <strong>{{ current_round.name }}</strong></p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit">Lock & Finish This Round</button>
+    </form>
+{% else %}
+    <p>All rounds are finished or no rounds exist.</p>
+{% endif %}
+{% if finished %}
+    <div class="success">Round locked and finished.</div>
+{% endif %}
+{% endblock %}

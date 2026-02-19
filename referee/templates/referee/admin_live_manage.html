@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load referee_extras %}
+{% block content %}
+<h2>Live Match Management & Referee Scoring</h2>
+<table border="1">
+    <tr>
+        <th>Round</th>
+        <th>Court</th>
+        <th>Team 1</th>
+        <th>Team 2</th>
+        <th>Score</th>
+        <th>Status</th>
+        <th>Action</th>
+    </tr>
+    {% for match in matches %}
+    <tr>
+        <td>{{ match.round.name }}</td>
+        <td>{{ match.court.name }}</td>
+        <td>{{ match.team1.team_name }}</td>
+        <td>{{ match.team2.team_name }}</td>
+        <td>
+            {% if scores|get_item:match.id %}
+                {{ scores|get_item:match.id.team1_score }} - {{ scores|get_item:match.id.team2_score }}
+            {% else %}
+                -
+            {% endif %}
+        </td>
+        <td>{{ match.status }}</td>
+        <td>
+            {% if match.round.is_finished or (scores|get_item:match.id and scores|get_item:match.id.locked) %}
+                Locked
+            {% else %}
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="match_id" value="{{ match.id }}">
+                    <input type="number" name="team1_score" min="0" value="{{ scores|get_item:match.id.team1_score|default:'' }}" required style="width:50px;">
+                    <input type="number" name="team2_score" min="0" value="{{ scores|get_item:match.id.team2_score|default:'' }}" required style="width:50px;">
+                    <button type="submit">Save</button>
+                </form>
+            {% endif %}
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+{% endblock %}

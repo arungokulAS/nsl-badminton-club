@@ -1,0 +1,90 @@
+select option {
+    background: rgba(0,0,0,0.60) !important;
+    color: #fff;
+}
+select {
+    background: rgba(0,0,0,0.30) !important;
+    color: #fff;
+    border-radius: 8px;
+    padding: 4px 10px;
+    border: 1px solid #a020f0;
+}
+body {
+    background: #f8f9fa;
+    font-family: Arial, sans-serif;
+}
+
+.navbar {
+    background: #222;
+    color: #fff;
+}
+
+h1 {
+    color: #222;
+}
+
+/* Add more styles as needed */
+
+.referee-court-container, .admin-token-container {
+    background: rgba(30, 30, 40, 0.55);
+    border-radius: 24px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    padding: 32px 24px;
+    margin: 48px auto;
+    max-width: 520px;
+    color: #fff;
+}
+
+.referee-court-container h2, .referee-court-container h3, .admin-token-container h2 {
+    color: #fff;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.25);
+}
+
+.pending-matches ul {
+    list-style: none;
+    padding: 0;
+}
+.pending-matches li {
+    background: rgba(40, 40, 60, 0.45);
+    border-radius: 16px;
+    margin-bottom: 18px;
+    padding: 18px 16px;
+    box-shadow: 0 2px 8px 0 rgba(31, 38, 135, 0.10);
+}
+.score-entry-form input, .score-entry-form select {
+    margin: 0 8px 0 0;
+    border-radius: 8px;
+    border: 1px solid #a020f0;
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+    padding: 4px 10px;
+}
+.score-entry-form button {
+    background: linear-gradient(90deg, #a020f0 0%, #6f00ff 100%);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 6px 18px;
+    font-weight: bold;
+    cursor: pointer;
+    box-shadow: 0 2px 8px 0 rgba(160,32,240,0.15);
+    transition: background 0.2s;
+}
+.score-entry-form button:hover {
+    background: linear-gradient(90deg, #6f00ff 0%, #a020f0 100%);
+}
+.submitted {
+    color: #a0ffa0;
+    font-weight: bold;
+}
+.token-result input[type="text"] {
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+    border-radius: 8px;
+    border: 1px solid #a020f0;
+    padding: 4px 10px;
+    margin-top: 8px;
+}

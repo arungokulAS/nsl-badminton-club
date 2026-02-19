@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+{% block content %}
+<div class="admin-token-container">
+    <h2>Referee Token Generator</h2>
+    <form method="post">
+        {% csrf_token %}
+        <label for="court">Court:</label>
+        <select name="court_id" required>
+            {% for court in courts %}
+                <option value="{{ court.id }}">Court {{ court.name }}</option>
+            {% endfor %}
+        </select>
+        <label for="round">Round:</label>
+        <select name="round_id" required>
+            {% for round in rounds %}
+                <option value="{{ round.id }}">{{ round.name }}</option>
+            {% endfor %}
+        </select>
+        <button type="submit">Generate Token</button>
+    </form>
+    {% if token_url %}
+    <div class="token-result">
+        <strong>Referee Link:</strong>
+        <input type="text" value="{{ token_url }}" readonly style="width: 100%;">
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
