@@ -6,14 +6,48 @@ from schedule.models import Round, Court
 from matches.models import Match
 from groups.models import Group
 from teams.models import Team
+from results.models import Score
+from live.utils import build_qualifier_table
 import os
 import random
+
+STANDARD_ROUND_NAMES = [
+	'Group Stage',
+	'Qualifier',
+	'Pre-Quarter',
+	'Quarter',
+	'Semi Final',
+	'Losers Final',
+	'Final',
+]
 
 def admin_schedule(request):
 	if not request.session.get('is_admin'):
 		return redirect('/admin/login')
 
-	rounds = Round.objects.all().order_by('order')
+	def get_center_courts(courts_list):
+		center = [court for court in courts_list if court.id in (3, 4)]
+		if not center:
+			center = [court for court in courts_list if court.name in ('Court 3', 'Court 4', '3', '4')]
+		return center
+
+	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
+	# Ensure standard round flow (includes Losers Final)
+	standard_rounds = [
+		('Group Stage', 1),
+		('Qualifier', 2),
+		('Pre-Quarter', 3),
+		('Quarter', 4),
+		('Semi Final', 5),
+		('Losers Final', 6),
+		('Final', 7),
+	]
+	for name, order in standard_rounds:
+		obj, created = Round.objects.get_or_create(name=name, defaults={'order': order})
+		if not created and obj.order != order:
+			obj.order = order
+			obj.save(update_fields=['order'])
+	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
 	# Lock court count after admin confirmation
 	if 'unlock_courts' in request.POST and request.method == 'POST':
 		if request.POST.get('admin_password') == 'admin123':  # Replace with your admin password logic
@@ -23,6 +57,283 @@ def admin_schedule(request):
 		else:
 			messages.error(request, 'Invalid admin password.')
 			return redirect('/admin/schedule')
+
+	# Finish round action
+	if request.method == 'POST' and 'finish_round' in request.POST:
+		admin_password = request.POST.get('admin_password')
+		round_id = int(request.POST.get('round_id', 0))
+		if admin_password != 'admin123':
+			messages.error(request, 'Invalid admin password.')
+			return redirect('/admin/schedule')
+		finish_round = Round.objects.filter(id=round_id).first()
+		if not finish_round:
+			messages.error(request, 'Invalid round.')
+			return redirect('/admin/schedule')
+		round_matches = Match.objects.filter(round=finish_round)
+		if not round_matches.exists():
+			messages.error(request, 'No matches found for this round.')
+			return redirect('/admin/schedule')
+		pending = round_matches.exclude(status='completed')
+		if pending.exists():
+			messages.error(request, 'All matches must be completed before finishing this round.')
+			return redirect('/admin/schedule')
+		scores_unlocked = Score.objects.filter(match__in=round_matches, locked=False)
+		if scores_unlocked.exists():
+			messages.error(request, 'All scores must be admin-confirmed before finishing this round.')
+			return redirect('/admin/schedule')
+		finish_round.is_finished = True
+		finish_round.save(update_fields=['is_finished'])
+		messages.success(request, f'{finish_round.name} finished. Next round unlocked.')
+		next_round = Round.objects.filter(order=finish_round.order + 1).first()
+		if next_round and not Match.objects.filter(round=next_round).exists():
+			from django.db import transaction
+			locked_num_courts = request.session.get('locked_num_courts')
+			courts = Court.objects.all().order_by('id')
+			if locked_num_courts:
+				courts = list(courts[:locked_num_courts])
+			else:
+				courts = list(courts)
+			if finish_round.order == 1:
+				groups = Group.objects.all().order_by('group_name')
+				qualified_teams = []
+				for group in groups:
+					group_teams = list(group.teams.all())
+					group_scores = [Score.objects.filter(match__team1=t, locked=True).first() for t in group_teams]
+					group_scores = [s for s in group_scores if s and s.winner]
+					group_scores.sort(key=lambda s: (s.team1_score + s.team2_score), reverse=True)
+					qualified_teams.extend([s.match.team1 for s in group_scores[:4]])
+				if len(qualified_teams) < 24:
+					messages.error(request, 'Qualifier scheduling failed: not enough qualified teams.')
+				elif not courts:
+					messages.error(request, 'Qualifier scheduling failed: no courts available.')
+				else:
+					pairings = [('A', 'F'), ('B', 'E'), ('C', 'D')]
+					matches = []
+					for g1, g2 in pairings:
+						teams1 = [t for t in qualified_teams if t.groups.filter(group_name=g1).exists() or t.groups.filter(group_name=f'Group {g1}').exists()]
+						teams2 = [t for t in qualified_teams if t.groups.filter(group_name=g2).exists() or t.groups.filter(group_name=f'Group {g2}').exists()]
+						for i in range(min(4, len(teams1), len(teams2))):
+							matches.append((teams1[i], teams2[3 - i]))
+					random.shuffle(matches)
+					with transaction.atomic():
+						for idx, (team1, team2) in enumerate(matches):
+							court = courts[idx % len(courts)]
+							Match.objects.create(
+								round=next_round,
+								team1=team1,
+								team2=team2,
+								court=court,
+								status='scheduled'
+							)
+					messages.success(request, 'Qualifier round scheduled.')
+			elif finish_round.order == 2:
+				qualifier_scores = Score.objects.select_related('match', 'match__team1', 'match__team2').filter(
+					match__round=finish_round,
+					locked=True,
+				)
+				qualifier_stats = {}
+				for score in qualifier_scores:
+					team1 = score.match.team1
+					team2 = score.match.team2
+					for team in (team1, team2):
+						if team and team.id not in qualifier_stats:
+							qualifier_stats[team.id] = {
+								'team': team,
+								'wins': 0,
+								'total_points': 0,
+								'points_for': 0,
+								'points_against': 0,
+								'points_diff': 0,
+							}
+					if not team1 or not team2:
+						continue
+					qualifier_stats[team1.id]['points_for'] += score.team1_score
+					qualifier_stats[team1.id]['points_against'] += score.team2_score
+					qualifier_stats[team2.id]['points_for'] += score.team2_score
+					qualifier_stats[team2.id]['points_against'] += score.team1_score
+					if score.team1_score > score.team2_score:
+						qualifier_stats[team1.id]['wins'] += 1
+						qualifier_stats[team1.id]['total_points'] += 2
+					elif score.team2_score > score.team1_score:
+						qualifier_stats[team2.id]['wins'] += 1
+						qualifier_stats[team2.id]['total_points'] += 2
+				for row in qualifier_stats.values():
+					row['points_diff'] = row['points_for'] - row['points_against']
+				sorted_rows = sorted(
+					qualifier_stats.values(),
+					key=lambda row: (row['total_points'], row['points_diff'], row['points_for'], row['wins'], row['team'].team_name),
+					reverse=True,
+				)
+				top_teams = [row['team'] for row in sorted_rows[:16]]
+				if len(top_teams) < 16:
+					fallback_teams = []
+					qualifier_matches = Match.objects.select_related('team1', 'team2').filter(round=finish_round).order_by('id')
+					for match in qualifier_matches:
+						for team in (match.team1, match.team2):
+							if team and team not in fallback_teams:
+								fallback_teams.append(team)
+					if len(fallback_teams) >= 16:
+						top_teams = fallback_teams[:16]
+				if len(top_teams) < 16:
+					messages.error(request, 'Pre-Quarter scheduling failed: not enough qualified teams.')
+				elif not courts:
+					messages.error(request, 'Pre-Quarter scheduling failed: no courts available.')
+				else:
+					pairings = []
+					for idx in range(8):
+						pairings.append((top_teams[idx], top_teams[-(idx + 1)]))
+					with transaction.atomic():
+						for idx, (team1, team2) in enumerate(pairings):
+							court = courts[idx % len(courts)]
+							Match.objects.create(
+								round=next_round,
+								team1=team1,
+								team2=team2,
+								court=court,
+								status='scheduled'
+							)
+					messages.success(request, 'Pre-Quarter round scheduled.')
+			elif finish_round.order == 3:
+				prequarter_scores = Score.objects.select_related('match', 'winner').filter(
+					match__round=finish_round,
+					locked=True,
+				).order_by('match__id')
+				winners = []
+				for score in prequarter_scores:
+					if score.winner and score.winner not in winners:
+						winners.append(score.winner)
+				if len(winners) < 8:
+					messages.error(request, 'Quarter scheduling failed: not enough winners from Pre-Quarter.')
+				elif not courts:
+					messages.error(request, 'Quarter scheduling failed: no courts available.')
+				else:
+					pairings = []
+					for idx in range(4):
+						pairings.append((winners[idx], winners[-(idx + 1)]))
+					with transaction.atomic():
+						for idx, (team1, team2) in enumerate(pairings):
+							court = courts[idx % len(courts)]
+							Match.objects.create(
+								round=next_round,
+								team1=team1,
+								team2=team2,
+								court=court,
+								status='scheduled'
+							)
+					messages.success(request, 'Quarter round scheduled.')
+			elif finish_round.order == 4:
+				quarter_scores = Score.objects.select_related('match', 'winner').filter(
+					match__round=finish_round,
+					locked=True,
+				).order_by('match__id')
+				winners = []
+				for score in quarter_scores:
+					if score.winner and score.winner not in winners:
+						winners.append(score.winner)
+				if len(winners) < 4:
+					messages.error(request, 'Semi-Final scheduling failed: not enough winners from Quarter.')
+				elif not courts:
+					messages.error(request, 'Semi-Final scheduling failed: no courts available.')
+				else:
+					center_courts = get_center_courts(courts) or courts
+					with transaction.atomic():
+						for idx in range(0, len(winners), 2):
+							if idx + 1 < len(winners):
+								court = center_courts[(idx // 2) % len(center_courts)]
+								Match.objects.create(
+									round=next_round,
+									team1=winners[idx],
+									team2=winners[idx + 1],
+									court=court,
+									status='scheduled'
+								)
+					messages.success(request, 'Semi-Final round scheduled.')
+			elif finish_round.order == 5:
+				semi_matches = Match.objects.filter(round=finish_round)
+				losers = []
+				for match in semi_matches:
+					score = Score.objects.filter(match=match, locked=True).first()
+					if score and score.winner:
+						loser = match.team1 if score.winner != match.team1 else match.team2
+						losers.append(loser)
+				if len(losers) == 2 and courts:
+					with transaction.atomic():
+						Match.objects.create(
+							round=next_round,
+							team1=losers[0],
+							team2=losers[1],
+							court=courts[0],
+							status='scheduled'
+						)
+					messages.success(request, 'Losers Final scheduled.')
+				elif not courts:
+					messages.error(request, 'Losers Final scheduling failed: no courts available.')
+				else:
+					messages.error(request, 'Losers Final requires two confirmed semi-final losers.')
+			elif finish_round.order == 6:
+				semi_matches = Match.objects.filter(round__order=5)
+				winners = []
+				for match in semi_matches:
+					score = Score.objects.filter(match=match, locked=True).first()
+					if score and score.winner and score.winner not in winners:
+						winners.append(score.winner)
+				if len(winners) == 2 and courts:
+					center_courts = get_center_courts(courts) or courts
+					with transaction.atomic():
+						Match.objects.create(
+							round=next_round,
+							team1=winners[0],
+							team2=winners[1],
+							court=center_courts[0],
+							status='scheduled'
+						)
+					messages.success(request, 'Final round scheduled.')
+				elif not courts:
+					messages.error(request, 'Final scheduling failed: no courts available.')
+				else:
+					messages.error(request, 'Final requires two confirmed semi-final winners.')
+			else:
+				messages.error(request, 'Unknown round logic or missing data.')
+		redirect_url = '/admin/schedule'
+		if next_round:
+			redirect_url = f'/admin/schedule?show_round={next_round.id}'
+		return redirect(redirect_url)
+
+	# AJAX: If this is an AJAX POST for locking courts, return only the referee dropdown HTML
+	if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'lock_courts' in request.POST:
+		# Only handle court locking, not schedule generation
+		print(f"DEBUG: AJAX POST data: {request.POST}")
+		admin_password = request.POST.get('admin_password')
+		print(f"DEBUG: admin_password received: {admin_password}")
+		locked_num_courts = int(request.POST.get('num_courts', 0))
+		if admin_password == 'admin123' and locked_num_courts:
+			request.session['locked_num_courts'] = locked_num_courts
+			print(f"DEBUG: locked_num_courts set to {locked_num_courts}")
+			request.session.save()  # Force session save
+		else:
+			print("DEBUG: Password incorrect or num_courts missing")
+		from django.template.loader import render_to_string
+		from django.http import JsonResponse
+		courts = Court.objects.all().order_by('id')[:locked_num_courts] if locked_num_courts else []
+		groups = Group.objects.all().order_by('group_name')
+		groups_locked = groups.exists() and groups.first().is_locked
+		total_courts = Court.objects.count()
+		max_courts = min(8, total_courts) if total_courts else 8
+		court_range = range(1, max_courts + 1)
+		next_round = rounds.filter(is_finished=False).order_by('order').first() if rounds.exists() else None
+		# Render referee dropdown + court lock panel HTML
+		dropdown_html = render_to_string('partials/referee_dropdown_nav.html', {'locked_courts': courts})
+		lock_panel_html = render_to_string(
+			'schedule/partials/court_lock_panel.html',
+			{
+				'groups_locked': groups_locked,
+				'locked_num_courts': locked_num_courts,
+				'court_range': court_range,
+				'next_round': next_round,
+			},
+			request=request,
+		)
+		return JsonResponse({'dropdown_html': dropdown_html, 'lock_panel_html': lock_panel_html})
 
 	locked_num_courts = request.session.get('locked_num_courts')
 	num_courts_selected = None
@@ -38,35 +349,91 @@ def admin_schedule(request):
 	else:
 		courts = list(courts)
 	groups = Group.objects.all().order_by('group_name')
-	matches = Match.objects.select_related('round', 'court', 'team1', 'team2').all().order_by('round__order', 'court__id')
-	# Only allow up to the number of actual Court objects
-	court_range = range(1, len(courts) + 1)
+	groups_locked = groups.exists() and groups.first().is_locked
+	matches = Match.objects.select_related('round', 'court', 'team1', 'team2').filter(round__order__in=[1, 2, 3, 4, 5, 6, 7], round__name__in=STANDARD_ROUND_NAMES).order_by('round__order', 'court__id')
+	# Always allow selection from 1 to 8 (or total number of courts if less than 8)
+	total_courts = Court.objects.count()
+	max_courts = min(8, total_courts) if total_courts else 8
+	court_range = range(1, max_courts + 1)
 
 
 	from django.db import transaction
 	next_round = rounds.filter(is_finished=False).order_by('order').first() if rounds.exists() else None
 
 	if request.method == 'POST' and 'generate_schedule' in request.POST and next_round:
+		if not groups_locked:
+			message = 'Groups must be locked before scheduling courts.'
+			messages.error(request, message)
+			if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+				from django.http import JsonResponse
+				return JsonResponse({'error': message}, status=400)
+			return redirect('/admin/schedule')
 		requested_round_id = int(request.POST.get('round', 0))
 		num_courts = len(courts)
 		if not courts:
-			messages.error(request, 'No courts defined.')
+			message = 'No courts defined.'
+			messages.error(request, message)
+			if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+				from django.http import JsonResponse
+				return JsonResponse({'error': message}, status=400)
 			return redirect('/admin/schedule')
 		if int(request.POST.get('num_courts', 0)) > Court.objects.count():
-			messages.error(request, 'Invalid number of courts.')
+			message = 'Invalid number of courts.'
+			messages.error(request, message)
+			if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+				from django.http import JsonResponse
+				return JsonResponse({'error': message}, status=400)
 			return redirect('/admin/schedule')
+		# Enforce previous round completion for non-group rounds
+		if next_round.order > 1:
+			prev_round = None
+			if next_round.name.lower().startswith('losers') or next_round.name.lower() == 'final':
+				prev_round = rounds.filter(name__iexact='Semi Final').first()
+			else:
+				prev_round = rounds.filter(order=next_round.order - 1).first()
+			if prev_round and not prev_round.is_finished:
+				message = 'Previous round must be finished before scheduling this round.'
+				messages.error(request, message)
+				if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+					from django.http import JsonResponse
+					return JsonResponse({'error': message}, status=400)
+				return redirect('/admin/schedule')
 		if requested_round_id != next_round.id:
-			messages.error(request, 'You can only schedule the next unfinished round.')
+			message = 'You can only schedule the next unfinished round.'
+			messages.error(request, message)
+			if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+				from django.http import JsonResponse
+				return JsonResponse({'error': message}, status=400)
 			return redirect('/admin/schedule')
-		# Prevent duplicate schedule for the same round
-		if Match.objects.filter(round_id=requested_round_id).exists():
-			messages.error(request, 'Schedule for this round already exists.')
-			return redirect('/admin/schedule')
-		# Always delete existing matches for this round before generating new schedule (should be redundant now)
-		Match.objects.filter(round_id=requested_round_id).delete()
+		# Allow regeneration if round has not started
+		existing_matches = Match.objects.filter(round_id=requested_round_id)
+		if existing_matches.exists():
+			if existing_matches.exclude(status='scheduled').exists():
+				message = 'Round already started. Cannot regenerate schedule.'
+				messages.error(request, message)
+				if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+					from django.http import JsonResponse
+					return JsonResponse({'error': message}, status=400)
+				return redirect('/admin/schedule')
+			existing_matches.delete()
 		round_id = requested_round_id
 		# Group Stage
 		if next_round.order == 1 and groups.exists():
+			if groups.count() != 6:
+				message = 'Group Stage requires exactly 6 groups.'
+				messages.error(request, message)
+				if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+					from django.http import JsonResponse
+					return JsonResponse({'error': message}, status=400)
+				return redirect('/admin/schedule')
+			for group in groups:
+				if group.teams.count() != 6:
+					message = f'Group {group.group_name} must have 6 teams.'
+					messages.error(request, message)
+					if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+						from django.http import JsonResponse
+						return JsonResponse({'error': message}, status=400)
+					return redirect('/admin/schedule')
 			def generate_group_matches(group_teams):
 				matches = []
 				for i in range(len(group_teams)):
@@ -85,7 +452,6 @@ def admin_schedule(request):
 					3: [2, 5],  # Court 3: Group C, F
 					4: [3, 5],  # Court 4: Group D, F
 				}
-				group_names = [g.group_name for g in groups]
 				# Map 'A', 'B', ... to Group objects
 				group_objs = {}
 				for g in groups:
@@ -93,9 +459,10 @@ def admin_schedule(request):
 					if code.startswith('GROUP '):
 						code = code.replace('GROUP ', '')
 					group_objs[code] = g
+				group_codes = list(group_objs.keys())
 				# Build matches for each group
 				group_matches = {}
-				for g in group_names:
+				for g in group_codes:
 					teams = list(group_objs[g].teams.all())
 					matches = [(g, m[0], m[1]) for m in generate_group_matches(teams)]
 					random.shuffle(matches)
@@ -116,26 +483,48 @@ def admin_schedule(request):
 						if group_for_slot in group_matches and group_matches[group_for_slot]:
 							court_slots[cidx].append(group_matches[group_for_slot].popleft())
 				# Flatten all court slots into a master schedule with rest enforcement
+				from collections import deque
 				master_schedule = []
-				team_last_slot = {}
-				slot_pointer = [0]*len(courts)
-				total_slots = max(len(slots) for slots in court_slots)
-				for slot in range(total_slots):
+				team_last_slots = {}
+				court_queues = [deque(slots) for slots in court_slots]
+				time_slot = 0
+				max_cycles = sum(len(q) for q in court_queues) * 20 + 200
+				cycles = 0
+				while any(court_queues) and cycles < max_cycles:
+					progress = False
 					for cidx, court in enumerate(courts):
-						if slot_pointer[cidx] < len(court_slots[cidx]):
-							group, team1, team2 = court_slots[cidx][slot_pointer[cidx]]
-							# Enforce rest: no team plays 3 consecutive matches
-							last1 = team_last_slot.get(team1.id, -100)
-							last2 = team_last_slot.get(team2.id, -100)
-							if len(master_schedule) - last1 < 2 or len(master_schedule) - last2 < 2:
-								# Push to next available slot
-								court_slots[cidx].append((group, team1, team2))
-								slot_pointer[cidx] += 1
+						if cidx >= len(court_queues) or not court_queues[cidx]:
+							continue
+						queue = court_queues[cidx]
+						attempts = 0
+						scheduled = False
+						while attempts < len(queue):
+							group, team1, team2 = queue[0]
+							recent1 = team_last_slots.get(team1.id, deque(maxlen=2))
+							recent2 = team_last_slots.get(team2.id, deque(maxlen=2))
+							conflict1 = len(recent1) == 2 and recent1[0] == time_slot - 2 and recent1[1] == time_slot - 1
+							conflict2 = len(recent2) == 2 and recent2[0] == time_slot - 2 and recent2[1] == time_slot - 1
+							if conflict1 or conflict2:
+								queue.rotate(-1)
+								attempts += 1
 								continue
+							queue.popleft()
 							master_schedule.append((court, group, team1, team2))
-							team_last_slot[team1.id] = len(master_schedule)
-							team_last_slot[team2.id] = len(master_schedule)
-							slot_pointer[cidx] += 1
+							if team1.id not in team_last_slots:
+								team_last_slots[team1.id] = deque(maxlen=2)
+							if team2.id not in team_last_slots:
+								team_last_slots[team2.id] = deque(maxlen=2)
+							team_last_slots[team1.id].append(time_slot)
+							team_last_slots[team2.id].append(time_slot)
+							progress = True
+							scheduled = True
+							break
+						if scheduled:
+							continue
+					cycles += 1
+					time_slot += 1
+					if not progress:
+						cycles += 1
 				# Schedule matches
 				for court, group, team1, team2 in master_schedule:
 					group_obj = group_objs.get(group)
@@ -151,13 +540,12 @@ def admin_schedule(request):
 		# Qualifier
 		elif next_round.order == 2:
 			# Get top 4 teams from each group
-			from results.models import Score
 			qualified_teams = []
 			for group in groups:
 				group_teams = list(group.teams.all())
 				# Sort by group results (score, point diff, etc.)
-				group_scores = [Score.objects.filter(match__team1=t).first() for t in group_teams]
-				group_scores = [s for s in group_scores if s]
+				group_scores = [Score.objects.filter(match__team1=t, locked=True).first() for t in group_teams]
+				group_scores = [s for s in group_scores if s and s.winner]
 				group_scores.sort(key=lambda s: (s.team1_score + s.team2_score), reverse=True)
 				qualified_teams.extend([s.match.team1 for s in group_scores[:4]])
 			# Cross-group pairing
@@ -185,12 +573,16 @@ def admin_schedule(request):
 		# Pre-Quarter
 		elif next_round.order == 3:
 			# 12 qualifier winners + 4 best losers
-			from results.models import Score
 			qualifier_matches = Match.objects.filter(round__order=2)
-			winners = [Score.objects.filter(match=m, winner__isnull=False).first().winner for m in qualifier_matches if Score.objects.filter(match=m, winner__isnull=False).first()]
-			losers = [m.team1 if Score.objects.filter(match=m).first().winner != m.team1 else m.team2 for m in qualifier_matches if Score.objects.filter(match=m).first()]
+			winners = [Score.objects.filter(match=m, winner__isnull=False, locked=True).first().winner for m in qualifier_matches if Score.objects.filter(match=m, winner__isnull=False, locked=True).first()]
+			losers = [m.team1 if Score.objects.filter(match=m, locked=True).first().winner != m.team1 else m.team2 for m in qualifier_matches if Score.objects.filter(match=m, locked=True).first()]
 			# Rank losers
-			best_losers = sorted(losers, key=lambda t: (Score.objects.filter(match__team1=t).first().team1_score + Score.objects.filter(match__team2=t).first().team2_score), reverse=True)[:4]
+			def score_total(team):
+				score = Score.objects.filter(match__team1=team, locked=True).first() or Score.objects.filter(match__team2=team, locked=True).first()
+				if not score:
+					return 0
+				return score.team1_score + score.team2_score
+			best_losers = sorted(losers, key=score_total, reverse=True)[:4]
 			teams = winners + best_losers
 			# High-vs-low seeding
 			teams.sort(key=lambda t: t.team_name)
@@ -209,9 +601,8 @@ def admin_schedule(request):
 		# Quarter
 		elif next_round.order == 4:
 			# 8 teams, knockout
-			from results.models import Score
 			preq_matches = Match.objects.filter(round__order=3)
-			winners = [Score.objects.filter(match=m, winner__isnull=False).first().winner for m in preq_matches if Score.objects.filter(match=m, winner__isnull=False).first()]
+			winners = [Score.objects.filter(match=m, winner__isnull=False, locked=True).first().winner for m in preq_matches if Score.objects.filter(match=m, winner__isnull=False, locked=True).first()]
 			random.shuffle(winners)
 			with transaction.atomic():
 				for idx in range(0, len(winners), 2):
@@ -228,9 +619,8 @@ def admin_schedule(request):
 		# Semi
 		elif next_round.order == 5:
 			# 4 teams, knockout
-			from results.models import Score
 			q_matches = Match.objects.filter(round__order=4)
-			winners = [Score.objects.filter(match=m, winner__isnull=False).first().winner for m in q_matches if Score.objects.filter(match=m, winner__isnull=False).first()]
+			winners = [Score.objects.filter(match=m, winner__isnull=False, locked=True).first().winner for m in q_matches if Score.objects.filter(match=m, winner__isnull=False, locked=True).first()]
 			with transaction.atomic():
 				for idx in range(0, len(winners), 2):
 					if idx+1 < len(winners):
@@ -243,12 +633,34 @@ def admin_schedule(request):
 							status='scheduled'
 						)
 			messages.success(request, f'Semi-Final round scheduled.')
+		# Losers Final (3rd place)
+		elif next_round.name.lower().startswith('losers'):
+			semi_matches = Match.objects.filter(round__order=5)
+			losers = []
+			for m in semi_matches:
+				score = Score.objects.filter(match=m, locked=True).first()
+				if score and score.winner:
+					loser = m.team1 if score.winner != m.team1 else m.team2
+					losers.append(loser)
+				if len(losers) == 2:
+					break
+			if len(losers) == 2:
+				with transaction.atomic():
+					Match.objects.create(
+						round=next_round,
+						team1=losers[0],
+						team2=losers[1],
+						court=courts[0],
+						status='scheduled'
+					)
+				messages.success(request, f'Losers Final scheduled.')
+			else:
+				messages.error(request, 'Losers Final requires two confirmed semi-final losers.')
 		# Final
-		elif next_round.order == 6:
+		elif next_round.name.lower() == 'final' or next_round.order == 7:
 			# 2 teams, single match
-			from results.models import Score
 			s_matches = Match.objects.filter(round__order=5)
-			winners = [Score.objects.filter(match=m, winner__isnull=False).first().winner for m in s_matches if Score.objects.filter(match=m, winner__isnull=False).first()]
+			winners = [Score.objects.filter(match=m, winner__isnull=False, locked=True).first().winner for m in s_matches if Score.objects.filter(match=m, winner__isnull=False, locked=True).first()]
 			if len(winners) == 2:
 				with transaction.atomic():
 					Match.objects.create(
@@ -261,28 +673,107 @@ def admin_schedule(request):
 				messages.success(request, f'Final round scheduled.')
 		else:
 			messages.error(request, 'Unknown round logic or missing data.')
-		return redirect('/admin/schedule')
+		if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+			from django.template.loader import render_to_string
+			from django.http import JsonResponse
+			rounds = Round.objects.all().order_by('order')
+			locked_num_courts = request.session.get('locked_num_courts')
+			courts = Court.objects.all().order_by('id')
+			if locked_num_courts:
+				courts = list(courts[:locked_num_courts])
+			else:
+				courts = list(courts)
+			groups = Group.objects.all().order_by('group_name')
+			matches = Match.objects.select_related('round', 'court', 'team1', 'team2').all().order_by('round__order', 'court__id')
+			show_round = request.GET.get('show_round')
+			current_round = rounds.filter(is_finished=False).first() if rounds.exists() else None
+			selected_round = None
+			if show_round:
+				try:
+					selected_round = rounds.get(id=int(show_round))
+				except Exception:
+					selected_round = current_round or rounds.first()
+			else:
+				selected_round = current_round or rounds.first()
+			show_round = selected_round.id if selected_round else None
+			has_matches_for_selected_round = matches.filter(round=selected_round).exists() if selected_round else False
+			selected_round_match_count = matches.filter(round=selected_round).count() if selected_round else 0
+			court_match_counts = {}
+			court_match_groups = []
+			if selected_round:
+				display_courts = courts
+				if selected_round.order in (5, 7):
+					center_courts = get_center_courts(courts)
+					center_with_matches = [court for court in center_courts if matches.filter(round=selected_round, court=court).exists()]
+					if center_with_matches:
+						display_courts = center_with_matches
+					else:
+						display_courts = [court for court in courts if matches.filter(round=selected_round, court=court).exists()]
+				elif selected_round.order == 6:
+					display_courts = [court for court in courts if matches.filter(round=selected_round, court=court).exists()]
+				for court in display_courts:
+					court_matches = matches.filter(round=selected_round, court=court)
+					court_match_counts[court.id] = court_matches.count()
+					court_match_groups.append({
+						'court': court,
+						'matches': list(court_matches),
+						'count': court_matches.count(),
+					})
+			context = {
+				'rounds': rounds,
+				'courts': courts,
+				'groups': groups,
+				'matches': matches,
+				'show_round': show_round,
+				'selected_round': selected_round,
+				'has_matches_for_selected_round': has_matches_for_selected_round,
+				'court_match_counts': court_match_counts,
+				'selected_round_match_count': selected_round_match_count,
+				'court_match_groups': court_match_groups,
+			}
+			matchtables_html = render_to_string('schedule/partials/match_tables.html', context, request=request)
+			return JsonResponse({'matchtables_html': matchtables_html})
 		return redirect('/admin/schedule')
 
-	# Determine selected round from GET param or default to first round
+	# Determine selected round from GET param or default to current round
 	show_round = request.GET.get('show_round')
+	current_round = rounds.filter(is_finished=False).first() if rounds.exists() else None
 	selected_round = None
 	if show_round:
 		try:
 			selected_round = rounds.get(id=int(show_round))
 		except Exception:
-			selected_round = rounds.first()
+			selected_round = current_round or rounds.first()
 	else:
-		selected_round = rounds.first()
+		selected_round = current_round or rounds.first()
+	show_round = selected_round.id if selected_round else None
 
 	# Now that selected_round and matches are defined, calculate has_matches_for_selected_round
 	has_matches_for_selected_round = matches.filter(round=selected_round).exists() if selected_round else False
+	selected_round_match_count = matches.filter(round=selected_round).count() if selected_round else 0
 
 	# Calculate total matches per court for selected round
 	court_match_counts = {}
+	court_match_groups = []
 	if selected_round:
-		for court in courts:
-			court_match_counts[court.id] = matches.filter(round=selected_round, court=court).count()
+		display_courts = courts
+		if selected_round.order in (5, 7):
+			center_courts = get_center_courts(courts)
+			center_with_matches = [court for court in center_courts if matches.filter(round=selected_round, court=court).exists()]
+			if center_with_matches:
+				display_courts = center_with_matches
+			else:
+				display_courts = [court for court in courts if matches.filter(round=selected_round, court=court).exists()]
+		elif selected_round.order == 6:
+			display_courts = [court for court in courts if matches.filter(round=selected_round, court=court).exists()]
+		for court in display_courts:
+			court_matches = matches.filter(round=selected_round, court=court)
+			court_match_counts[court.id] = court_matches.count()
+			court_match_groups.append({
+				'court': court,
+				'matches': list(court_matches),
+				'count': court_matches.count(),
+			})
 
 	context = {
 		'rounds': rounds,
@@ -295,6 +786,9 @@ def admin_schedule(request):
 		'selected_round': selected_round,
 		'has_matches_for_selected_round': has_matches_for_selected_round,
 		'court_match_counts': court_match_counts,
+		'selected_round_match_count': selected_round_match_count,
+		'court_match_groups': court_match_groups,
 		'locked_num_courts': locked_num_courts,
+		'groups_locked': groups_locked,
 	}
 	return render(request, 'schedule/admin_schedule.html', context)

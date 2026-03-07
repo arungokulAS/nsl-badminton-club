@@ -1,0 +1,10 @@
+<!-- 6 Rounds Dashboard -->
+<div style="margin:36px auto 0 auto;max-width:900px;">
+    <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
+        {% for round in rounds %}
+        <div style="background:rgba(128,0,255,0.10);border-radius:16px;padding:18px 28px;min-width:120px;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);margin-bottom:12px;display:flex;flex-direction:column;align-items:center;">
+            <div style="font-size:1.12em;font-weight:700;color:#fff;margin-bottom:6px;">{{ round.name }}</div>
+        </div>
+        {% endfor %}
+    </div>
+</div>

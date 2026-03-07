@@ -1,20 +1,101 @@
 {% extends 'base.html' %}
 {% block content %}
-<div class="dashboard-container">
-    <h2>Admin Dashboard</h2>
-    <ul>
-        <li><a href="/admin/teams">Teams Master Data</a></li>
-        <li><a href="/admin/groups">Groups Management</a></li>
-        <li><a href="/admin/schedule">Schedule Management</a></li>
-        <li><a href="/admin/live-manage">Live Manage</a></li>
-
-        <li><a href="/admin/logout">Logout</a></li>
-    </ul>
-</div>
+<div class="admin-hero-bg"></div>
+<section class="admin-hero-section">
+    <div class="admin-hero-content">
+        <div class="admin-hero-title">Admin</div>
+        <div class="admin-hero-subtitle">Dashboard</div>
+    </div>
+</section>
 <style>
-.dashboard-container { max-width: 600px; margin: 60px auto; background: #fff3; padding: 32px; border-radius: 12px; box-shadow: 0 2px 16px #a020f0; }
-.dashboard-container ul { list-style: none; padding: 0; }
-.dashboard-container li { margin: 12px 0; }
-.dashboard-container a { color: #a020f0; text-decoration: none; font-weight: bold; }
+body {
+    background: #0a0015 !important;
+}
+.admin-hero-bg {
+    position: absolute;
+    top: 0; left: 0; width: 100vw; height: 100vh;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+}
+.admin-hero-bg::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 800px;
+    height: 800px;
+    transform: translate(-50%, -50%) scale(1);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(168,85,247,0.3) 0%, rgba(139,92,246,0.15) 20%, rgba(88,28,135,0.08) 40%, transparent 70%);
+    filter: blur(60px);
+    opacity: 0.5;
+    animation: admin-hero-bg-pulse 4s ease-in-out infinite;
+    z-index: 0;
+}
+@keyframes admin-hero-bg-pulse {
+    0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+    50% { transform: translate(-50%, -50%) scale(1.05); opacity: 0.8; }
+}
+.admin-hero-section {
+    min-height: 100vh;
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    z-index: 1;
+}
+.admin-hero-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.admin-hero-title {
+    font-size: 5rem;
+    font-weight: 700;
+    color: rgba(255,255,255,0.95);
+    text-shadow: 0 0 40px rgba(255,255,255,0.3);
+    letter-spacing: -0.02em;
+    margin-bottom: 1rem;
+    animation: admin-float 6s ease-in-out infinite;
+    transition: font-size 0.3s;
+}
+@keyframes admin-float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-15px); }
+}
+.admin-hero-subtitle {
+    font-size: 1.2rem;
+    font-weight: 400;
+    color: rgba(255,255,255,0.5);
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: admin-fadein-bottom 1s ease-in 0.5s forwards;
+    transition: font-size 0.3s;
+}
+@keyframes admin-fadein-bottom {
+    to { opacity: 1; transform: translateY(0); }
+}
+/* Responsive font sizes */
+@media (min-width: 1200px) {
+    .admin-hero-title { font-size: 12rem; }
+    .admin-hero-subtitle { font-size: 2rem; }
+}
+@media (max-width: 1199px) and (min-width: 768px) {
+    .admin-hero-title { font-size: 8rem; }
+    .admin-hero-subtitle { font-size: 1.5rem; }
+}
+@media (max-width: 767px) and (min-width: 480px) {
+    .admin-hero-title { font-size: 5rem; }
+    .admin-hero-subtitle { font-size: 1.2rem; }
+}
+@media (max-width: 479px) {
+    .admin-hero-title { font-size: 3.5rem; }
+    .admin-hero-subtitle { font-size: 1rem; }
+}
 </style>
 {% endblock %}

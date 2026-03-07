@@ -21,25 +21,27 @@
         </tr>
         {% for match in matches %}
             {% if match.round.id == round.id %}
+            {% with score=scores|get_item:match.id %}
             <tr>
-                <td>{{ match.court.name }}</td>
+                <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
                 <td>{{ match.team1.team_name }}</td>
                 <td>{{ match.team2.team_name }}</td>
                 <td>
-                    {% if scores|get_item:match.id %}
-                        {{ scores|get_item:match.id.team1_score }} - {{ scores|get_item:match.id.team2_score }}
+                    {% if score %}
+                        {{ score.team1_score }} - {{ score.team2_score }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
                 <td>
-                    {% if scores|get_item:match.id and scores|get_item:match.id.winner %}
-                        {{ scores|get_item:match.id.winner.team_name }}
+                    {% if score and score.winner %}
+                        {{ score.winner.team_name }}
                     {% else %}
                         -
                     {% endif %}
                 </td>
             </tr>
+            {% endwith %}
             {% endif %}
         {% endfor %}
     </table>

@@ -1,0 +1,266 @@
+<div class="points-section">
+    <div class="points-header"></div>
+    {% if selected_round and selected_round.name == 'Group Stage' and group_tables and selected_round_can_view %}
+        <div class="group-slider" data-group-slider>
+            <button class="group-nav group-nav-left" type="button" data-group-prev aria-label="Previous group">‹</button>
+            <div class="group-slider-track" data-group-track>
+                {% for group_table in group_tables %}
+                    <div class="group-slide" data-group-slide>
+                        <div class="group-table">
+                            <h4 class="group-title-badge">
+                                {% with group_name=group_table.group.group_name %}
+                                    {% if group_name|lower|slice:":6" == "group " %}
+                                        {{ group_name }}
+                                    {% else %}
+                                        Group {{ group_name }}
+                                    {% endif %}
+                                {% endwith %}
+                            </h4>
+                            <table class="live-table">
+                                <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>P</th>
+                                    <th>W</th>
+                                    <th>L</th>
+                                    <th>PTS</th>
+                                    <th>GF</th>
+                                    <th>GA</th>
+                                    <th>PD</th>
+                                </tr>
+                                </thead>
+                                <tbody>
+                                {% for row in group_table.rows %}
+                                <tr class="{% if row.is_qualified %}qualified-row{% elif row.is_eliminated %}eliminated-row{% endif %}">
+                                    <td>{{ row.team.team_name }}</td>
+                                    <td>{{ row.played }}</td>
+                                    <td>{{ row.wins }}</td>
+                                    <td>{{ row.losses }}</td>
+                                    <td>{{ row.points }}</td>
+                                    <td>{{ row.goals_for }}</td>
+                                    <td>{{ row.goals_against }}</td>
+                                    <td class="{% if row.diff > 0 %}diff-positive{% elif row.diff < 0 %}diff-negative{% else %}diff-neutral{% endif %}">{{ row.diff }}</td>
+                                </tr>
+                                {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <button class="group-nav group-nav-right" type="button" data-group-next aria-label="Next group">›</button>
+        </div>
+    {% elif selected_round and selected_round.name == 'Qualifier' and qualifier_table and selected_round_can_view %}
+        <div class="group-table">
+            <h4 class="group-title-badge">Qualifier Point Table</h4>
+            <table class="live-table qualifier-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>G</th>
+                    <th>P</th>
+                    <th>W</th>
+                    <th>L</th>
+                    <th>PF</th>
+                    <th>PA</th>
+                    <th>PD</th>
+                    <th>TP</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in qualifier_table %}
+                <tr class="{% if row.is_winner %}qualified-row{% elif row.is_best_loser %}best-loser-row{% else %}eliminated-row{% endif %}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                    <td>{% if row.group %}{{ row.group }}{% else %}-{% endif %}</td>
+                    <td>{{ row.played }}</td>
+                    <td>{{ row.wins }}</td>
+                    <td>{{ row.losses }}</td>
+                    <td>{% if row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                    <td>{% if row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                    <td>{% if row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                    <td>{{ row.total_points }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_round and selected_round_can_view and prequarter_table and 'pre-quarter' in selected_round.name|lower %}
+        <div class="group-table">
+            <h4 class="group-title-badge">Pre-Quarter point Table</h4>
+            <table class="live-table prequarter-live-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>PF</th>
+                    <th>PA</th>
+                    <th>PD</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in prequarter_table %}
+                <tr class="{% if row.is_prequarter_qualified %}qualified-row{% elif row.is_prequarter_eliminated %}eliminated-row{% endif %}">
+                    <td>{{ row.rank }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                    <td>{{ row.points_for }}</td>
+                    <td>{{ row.points_against }}</td>
+                    <td>{% if row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_round and selected_round_can_view and quarter_qualified and selected_round.name|lower == 'quarter' %}
+        <div class="group-table">
+            <h4 class="group-title-badge">Quarter Qualified Teams</h4>
+            <table class="live-table prequarter-live-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                           <th>PF</th>
+                           <th>PA</th>
+                           <th>PD</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in quarter_qualified %}
+                <tr class="{% if row.is_quarter_top %}qualified-row{% elif row.is_quarter_eliminated %}eliminated-row{% endif %}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                           <td>{% if quarter_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                           <td>{% if quarter_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                           <td>{% if quarter_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_round and selected_round_can_view and semi_qualified and selected_round.name|lower == 'semi final' %}
+        <div class="group-table">
+            <h4 class="group-title-badge">Semi Final Point Table</h4>
+            <table class="live-table prequarter-live-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>PF</th>
+                    <th>PA</th>
+                    <th>PD</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in semi_qualified %}
+                <tr class="{% if forloop.counter <= 2 %}qualified-row{% elif forloop.counter <= 4 %}losers-final-orange-row{% endif %}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                    <td>{% if semi_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                    <td>{% if semi_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                    <td>{% if semi_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_round and selected_round_can_view and losers_final_table and selected_round.name == 'Losers Final' %}
+        <div class="group-table">
+            <h4 class="group-title-badge">Losers Final Point Table</h4>
+            <table class="live-table prequarter-live-table">
+                <thead>
+                <tr>
+                    <th>#</th>
+                    <th>Team</th>
+                    <th>PF</th>
+                    <th>PA</th>
+                    <th>PD</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for row in losers_final_table %}
+                <tr class="{{ row.row_class }}">
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                    <td>{% if losers_final_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                    <td>{% if losers_final_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                    <td>{% if losers_final_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% elif selected_round and selected_round_can_view and selected_round.name == 'Final' %}
+        <div class="final-trophy-wrap">
+            <style>
+            .final-trophy-wrap {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                margin: 32px 0 32px 0;
+            }
+            .final-trophy-img {
+                width: 360px;
+                height: auto;
+                animation: trophy-heartbeat 2.2s infinite;
+                margin-bottom: 30px;
+                filter: drop-shadow(0 0 48px #a855f7) brightness(1.05) sepia(0.2) saturate(1.3) hue-rotate(-8deg);
+                opacity: 0.96;
+            }
+            @keyframes trophy-heartbeat {
+                0% {
+                    transform: scale(1);
+                }
+                10% {
+                    transform: scale(1.08);
+                }
+                20% {
+                    transform: scale(1.18);
+                }
+                30% {
+                    transform: scale(1.08);
+                }
+                40% {
+                    transform: scale(1);
+                }
+                50% {
+                    transform: scale(1.08);
+                }
+                60% {
+                    transform: scale(1.18);
+                }
+                70% {
+                    transform: scale(1.08);
+                }
+                80% {
+                    transform: scale(1);
+                }
+                100% {
+                    transform: scale(1);
+                }
+            }
+            .final-winner-name {
+                font-size: 2.6rem;
+                font-weight: 800;
+                margin-bottom: 8px;
+                text-align: center;
+                letter-spacing: 0.04em;
+                background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                color: transparent;
+                text-shadow: none;
+            }
+            </style>
+            <img src="/static/vecteezy_trophy-isolated-on-a-transparent-background_47920647.png" alt="Trophy" class="final-trophy-img" />
+            <div class="final-winner-name">
+                {% if winner_team %}{{ winner_team.team_name }}{% else %}-{% endif %}
+            </div>
+        </div>
+    {% elif selected_round and current_round and selected_round.id != current_round.id and not selected_round.is_finished %}
+        <div style="color:#fff;text-align:center;margin-top:12px;">This round has not started yet.</div>
+    {% else %}
+        <div style="color:#fff;text-align:center;margin-top:12px;">No point table available for this round.</div>
+    {% endif %}
+</div>

@@ -1,0 +1,6 @@
+{% if locked_courts %}
+    <button class="dropdown-item" onclick="location.href='/referee/admin/tokens/'">Generate Referee Token Link</button>
+    <span style="color:#aaa;padding:8px 16px;display:block;">Referees must use the secure token link.</span>
+{% else %}
+    <span style="color:#aaa;padding:8px 16px;display:block;">No courts locked</span>
+{% endif %}

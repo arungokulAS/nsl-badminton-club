@@ -1,0 +1,109 @@
+<!-- Round Selector -->
+<style>
+    .live-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: none;
+        box-shadow: 0 2px 18px 0 rgba(120,180,255,0.10);
+        color: #fff;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        font-size: 1.08rem;
+        overflow: hidden;
+        margin: 0 auto;
+        border-radius: 28px;
+        border-left: 1px solid rgba(128,0,255,0.25) !important;
+        border-right: 1px solid rgba(128,0,255,0.25) !important;
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+        border-top: none !important;
+    }
+    .live-table th, .live-table td {
+        border: none !important;
+        background: none;
+        color: #fff;
+        padding: 0.85em 1.2em;
+        font-weight: 400;
+        text-align: left;
+        transition: background 0.25s, box-shadow 0.25s, color 0.18s;
+    }
+    .live-table th {
+        background: linear-gradient(120deg, rgba(60,30,120,0.32) 0%, rgba(30,60,120,0.28) 100%);
+        font-weight: 500;
+        color: #fff;
+        border-top-left-radius: 18px;
+        border-top-right-radius: 18px;
+        height: 54px;
+        font-size: 1.09rem;
+        letter-spacing: 0.01em;
+    }
+    .live-table tr:last-child td {
+        border: none !important;
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+    }
+    .live-table th:first-child {
+        border-top-left-radius: 18px;
+    }
+    .live-table th:last-child {
+        border-top-right-radius: 18px;
+    }
+    .live-table td:last-child {
+        text-align: center;
+    }
+    .live-table tbody tr:not(:last-child)::after {
+        content: '';
+        display: block;
+        height: 2px;
+        margin-top: -2px;
+        background: linear-gradient(90deg, rgba(128,0,255,0) 0%, rgba(128,0,255,0.25) 50%, rgba(128,0,255,0) 100%);
+        pointer-events: none;
+    }
+    .live-table tbody tr:not(:last-child) td {
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+    }
+</style>
+<div style="display:flex;justify-content:center;gap:18px;margin:24px 0 32px 0;">
+    {% for round in rounds %}
+        <a href="?show_round={{ round.id }}" style="padding:8px 18px;border-radius:18px;font-weight:600;font-size:1.08em;text-decoration:none;color:{% if show_round|default:rounds.0.id == round.id %}#fff{% else %}#a020f0{% endif %};background:{% if show_round|default:rounds.0.id == round.id %}linear-gradient(120deg,rgba(128,0,255,0.32),rgba(80,0,120,0.32)){% else %}none{% endif %};transition:background 0.18s;">{{ round.name }}</a>
+    {% endfor %}
+</div>
+<!-- Removed horizontal line after form -->
+<div>
+    <h3 style="margin-bottom:6px;color:#a020f0;text-align:center;">{{ selected_round.name }}</h3>
+    <div style="color:#fff;text-align:center;font-size:0.98em;margin-bottom:12px;">Total matches in this round: <b>{{ selected_round_match_count|default:"0" }}</b></div>
+    {% if not has_matches_for_selected_round %}
+        <div style="color:#c00;text-align:center;">No schedule generated for this round yet.</div>
+    {% else %}
+        {% for court_group in court_match_groups %}
+            <div style="width:100%;max-width:1000px;margin:0 auto 18px auto;">
+                <h5 style="color:#fff;margin:24px 0 8px 0;text-align:left;">{{ court_group.court.name }}</h5>
+                <table class="live-table" style="margin-bottom:18px;width:100%;">
+                    <thead>
+                    <tr>
+                        <th>Sl No</th>
+                        {% if selected_round.name == 'Group Stage' %}
+                            <th>Group</th>
+                        {% endif %}
+                        <th>Team 1</th>
+                        <th>Team 2</th>
+                        <th>Status</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for match in court_group.matches %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        {% if selected_round.name == 'Group Stage' %}
+                            <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
+                        {% endif %}
+                        <td>{{ match.team1.team_name }}</td>
+                        <td>{{ match.team2.team_name }}</td>
+                        <td>{{ match.status }}</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table>
+                <div style="color:#fff;text-align:right;font-size:0.98em;margin-bottom:18px;">Total matches on this court: <b>{{ court_group.count|default:"0" }}</b></div>
+            </div>
+        {% endfor %}
+    {% endif %}
+</div>

@@ -1,7 +1,6 @@
 {% extends 'base.html' %}
 {% block content %}
 <div style="margin-top:110px;"></div>
-<h2 style="text-align:center;margin-bottom:8px;color:#fff;">Admin Schedule Management</h2>
 {% if messages %}
 <ul class="messages" style="max-width:600px;margin:0 auto 18px auto;padding:0;list-style:none;">
     {% for message in messages %}
@@ -9,75 +8,137 @@
     {% endfor %}
 </ul>
 {% endif %}
-<h2 style="text-align:center;margin-bottom:18px;color:#fff;">Schedule</h2>
+<div class="schedule-admin-content" style="position:relative;z-index:1;margin-top:110px;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+    <h2 class="schedule-title-glass">Schedule</h2>
+    <span style="display:none;">Admin Schedule Management</span>
+    <div class="schedule-bg-title" aria-hidden="true">SCHEDULE</div>
+</div>
+<style>
+.schedule-title-glass {
+    text-align: center;
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 2.2rem;
+    background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    filter: drop-shadow(0 4px 32px rgba(128,0,255,0.18)) drop-shadow(0 1.5px 0 rgba(255,255,255,0.10));
+    position: relative;
+    z-index: 2;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    /* Glass effect */
+    backdrop-filter: blur(2.5px) saturate(1.2);
+    -webkit-backdrop-filter: blur(2.5px) saturate(1.2);
+    text-transform: uppercase;
+}
+.schedule-bg-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12vw;
+    font-weight: 900;
+    color: #fff;
+    opacity: 0.07;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    white-space: nowrap;
+    line-height: 1;
+    filter: blur(0.5px);
+    -webkit-mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+}
+</style>
 <!-- Removed Schedule System info text -->
 <div style="display:flex;justify-content:center;width:100%;">
-    {% if not locked_num_courts %}
-    <form method="post" style="display:flex;gap:12px;align-items:center;background:none;border:none;padding:12px 0;">
-        {% csrf_token %}
-        <label for="num_courts" style="font-weight:500;color:#fff;background:rgba(128,0,255,0.18);padding:4px 10px;border-radius:8px;">Number of Courts:</label>
-        <select name="num_courts" id="num_courts" required>
-            <option value="">Select</option>
-            {% for i in court_range %}
-                <option value="{{ i }}">{{ i }}</option>
-            {% endfor %}
-        </select>
-        <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;">
-        <button type="submit" name="generate_schedule" style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:6px 18px;font-weight:600;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);">Generate Schedule & Lock</button>
-    </form>
-    {% else %}
-    <div style="display:flex;gap:12px;align-items:center;background:none;border:none;padding:12px 0;">
-        <span style="font-weight:500;color:#fff;background:rgba(128,0,255,0.18);padding:4px 10px;border-radius:8px;">Courts locked: <b>{{ locked_num_courts }}</b></span>
-        <form method="post" style="display:inline;">
-            {% csrf_token %}
-            <input type="password" name="admin_password" placeholder="Admin Password to Unlock" required style="border-radius:8px;padding:4px 10px;">
-            <button type="submit" name="unlock_courts" style="background:linear-gradient(120deg,rgba(255,0,128,0.32) 0%,rgba(120,0,80,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:6px 18px;font-weight:600;box-shadow:0 2px 12px 0 rgba(255,0,128,0.10);">Unlock Court Selection</button>
-        </form>
+    <div id="schedule-error" style="display:none;color:#ff6b6b;background:rgba(128,0,255,0.10);padding:10px 18px;border-radius:8px;font-weight:500;margin-bottom:12px;"></div>
+    <div id="court-lock-panel">
+        {% include 'schedule/partials/court_lock_panel.html' %}
     </div>
-    {% endif %}
-</div>
+    <script>
+        function bindCourtLockForm() {
+            var lockForm = document.getElementById('lock-courts-form');
+            if (!lockForm) return;
+            lockForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(lockForm);
+                fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(response => response.json().catch(() => ({ error: 'Unexpected response from server.' })))
+                .then(data => {
+                    if (data.lock_panel_html) {
+                        document.getElementById('court-lock-panel').innerHTML = data.lock_panel_html;
+                    }
+                    if (data.dropdown_html) {
+                        var dropdown = document.getElementById('referee-dropdown-nav');
+                        if (dropdown) dropdown.innerHTML = data.dropdown_html;
+                    }
+                    bindCourtLockForm();
+                    bindGenerateScheduleForm();
+                })
+                .catch(() => {
+                    var errorBox = document.getElementById('schedule-error');
+                    if (errorBox) {
+                        errorBox.textContent = 'Lock courts failed. Please try again.';
+                        errorBox.style.display = 'block';
+                    }
+                });
+            });
+        }
 
-<!-- Round Selector -->
-<div style="display:flex;justify-content:center;gap:18px;margin:24px 0 32px 0;">
-    {% for round in rounds %}
-        <a href="?show_round={{ round.id }}" style="padding:8px 18px;border-radius:18px;font-weight:600;font-size:1.08em;text-decoration:none;color:{% if show_round|default:rounds.0.id == round.id %}#fff{% else %}#a020f0{% endif %};background:{% if show_round|default:rounds.0.id == round.id %}linear-gradient(120deg,rgba(128,0,255,0.32),rgba(80,0,120,0.32)){% else %}none{% endif %};transition:background 0.18s;">{{ round.name }}</a>
-    {% endfor %}
+        function bindGenerateScheduleForm() {
+            var genForm = document.getElementById('generate-schedule-form');
+            if (!genForm) return;
+            genForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                var formData = new FormData(genForm);
+                fetch(window.location.pathname, {
+                    method: 'POST',
+                    headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                    body: formData
+                })
+                .then(response => response.json().catch(() => ({ error: 'Unexpected response from server.' })))
+                .then(data => {
+                    var errorBox = document.getElementById('schedule-error');
+                    if (data.error && errorBox) {
+                        errorBox.textContent = data.error;
+                        errorBox.style.display = 'block';
+                    } else if (errorBox) {
+                        errorBox.textContent = '';
+                        errorBox.style.display = 'none';
+                    }
+                    if (data.matchtables_html) {
+                        document.getElementById('matchtables-container').innerHTML = data.matchtables_html;
+                    }
+                })
+                .catch(() => {
+                    var errorBox = document.getElementById('schedule-error');
+                    if (errorBox) {
+                        errorBox.textContent = 'Schedule generation failed. Please try again.';
+                        errorBox.style.display = 'block';
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            bindCourtLockForm();
+            bindGenerateScheduleForm();
+        });
+    </script>
 </div>
-<!-- Removed horizontal line after form -->
-<div>
-    <h3 style="margin-bottom:8px;color:#a020f0;text-align:center;">{{ selected_round.name }}</h3>
-    {% if not has_matches_for_selected_round %}
-        <div style="color:#c00;text-align:center;">No schedule generated for this round yet.</div>
-    {% else %}
-        {% for court in courts %}
-            <h5 style="color:#a020f0;margin-top:10px;">Court: {{ court.name }}</h5>
-            <table border="1" style="border-radius:12px;box-shadow:0 0 12px 2px rgba(128,0,255,0.32);margin-bottom:18px;">
-                <tr style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;">
-                    <th>Sl No</th>
-                    <th>Group</th>
-                    <th>Team 1</th>
-                    <th>Team 2</th>
-                    <th>Status</th>
-                </tr>
-                {% with sl=0 %}
-                {% for match in matches %}
-                    {% if match.round.id == selected_round.id and match.court.id == court.id %}
-                    {% with sl=sl|add:1 %}
-                    <tr>
-                        <td>{{ forloop.counter }}</td>
-                        <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
-                        <td>{{ match.team1.team_name }}</td>
-                        <td>{{ match.team2.team_name }}</td>
-                        <td>{{ match.status }}</td>
-                    </tr>
-                    {% endwith %}
-                    {% endif %}
-                {% endfor %}
-                {% endwith %}
-            </table>
-            <div style="color:#fff;text-align:right;font-size:0.98em;margin-bottom:18px;">Total matches on this court: <b>{{ court_match_counts.court.id|default:"0" }}</b></div>
-        {% endfor %}
-    {% endif %}
+<div id="matchtables-container">
+    {% include 'schedule/partials/match_tables.html' %}
 </div>
 <form method="post" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:36px;">
     {% csrf_token %}

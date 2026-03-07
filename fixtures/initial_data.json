@@ -1,0 +1,574 @@
+[
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "add_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "change_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "delete_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view log entry",
+    "content_type": [
+      "admin",
+      "logentry"
+    ],
+    "codename": "view_logentry"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "add_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "change_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "delete_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view permission",
+    "content_type": [
+      "auth",
+      "permission"
+    ],
+    "codename": "view_permission"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view group",
+    "content_type": [
+      "auth",
+      "group"
+    ],
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "add_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "change_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "delete_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view user",
+    "content_type": [
+      "auth",
+      "user"
+    ],
+    "codename": "view_user"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "add_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "change_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "delete_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view content type",
+    "content_type": [
+      "contenttypes",
+      "contenttype"
+    ],
+    "codename": "view_contenttype"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "add_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "change_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "delete_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view session",
+    "content_type": [
+      "sessions",
+      "session"
+    ],
+    "codename": "view_session"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add team",
+    "content_type": [
+      "teams",
+      "team"
+    ],
+    "codename": "add_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change team",
+    "content_type": [
+      "teams",
+      "team"
+    ],
+    "codename": "change_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete team",
+    "content_type": [
+      "teams",
+      "team"
+    ],
+    "codename": "delete_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view team",
+    "content_type": [
+      "teams",
+      "team"
+    ],
+    "codename": "view_team"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add group",
+    "content_type": [
+      "groups",
+      "group"
+    ],
+    "codename": "add_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change group",
+    "content_type": [
+      "groups",
+      "group"
+    ],
+    "codename": "change_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete group",
+    "content_type": [
+      "groups",
+      "group"
+    ],
+    "codename": "delete_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view group",
+    "content_type": [
+      "groups",
+      "group"
+    ],
+    "codename": "view_group"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add court",
+    "content_type": [
+      "schedule",
+      "court"
+    ],
+    "codename": "add_court"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change court",
+    "content_type": [
+      "schedule",
+      "court"
+    ],
+    "codename": "change_court"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete court",
+    "content_type": [
+      "schedule",
+      "court"
+    ],
+    "codename": "delete_court"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view court",
+    "content_type": [
+      "schedule",
+      "court"
+    ],
+    "codename": "view_court"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add round",
+    "content_type": [
+      "schedule",
+      "round"
+    ],
+    "codename": "add_round"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change round",
+    "content_type": [
+      "schedule",
+      "round"
+    ],
+    "codename": "change_round"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete round",
+    "content_type": [
+      "schedule",
+      "round"
+    ],
+    "codename": "delete_round"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view round",
+    "content_type": [
+      "schedule",
+      "round"
+    ],
+    "codename": "view_round"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add match",
+    "content_type": [
+      "matches",
+      "match"
+    ],
+    "codename": "add_match"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change match",
+    "content_type": [
+      "matches",
+      "match"
+    ],
+    "codename": "change_match"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete match",
+    "content_type": [
+      "matches",
+      "match"
+    ],
+    "codename": "delete_match"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view match",
+    "content_type": [
+      "matches",
+      "match"
+    ],
+    "codename": "view_match"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add referee",
+    "content_type": [
+      "referee",
+      "referee"
+    ],
+    "codename": "add_referee"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change referee",
+    "content_type": [
+      "referee",
+      "referee"
+    ],
+    "codename": "change_referee"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete referee",
+    "content_type": [
+      "referee",
+      "referee"
+    ],
+    "codename": "delete_referee"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view referee",
+    "content_type": [
+      "referee",
+      "referee"
+    ],
+    "codename": "view_referee"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can add score",
+    "content_type": [
+      "results",
+      "score"
+    ],
+    "codename": "add_score"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can change score",
+    "content_type": [
+      "results",
+      "score"
+    ],
+    "codename": "change_score"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can delete score",
+    "content_type": [
+      "results",
+      "score"
+    ],
+    "codename": "delete_score"
+  }
+},
+{
+  "model": "auth.permission",
+  "fields": {
+    "name": "Can view score",
+    "content_type": [
+      "results",
+      "score"
+    ],
+    "codename": "view_score"
+  }
+}
+]

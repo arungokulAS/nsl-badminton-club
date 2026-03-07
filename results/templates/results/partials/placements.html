@@ -1,0 +1,58 @@
+{% if placements.champion or placements.third_place %}
+<style>
+.placements-trophies {
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 36px;
+    margin: 32px 0 32px 0;
+}
+.trophy-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 120px;
+}
+.trophy-icon {
+    font-size: 3.2rem;
+    margin-bottom: 8px;
+    filter: drop-shadow(0 2px 8px rgba(128,0,255,0.18));
+}
+.trophy-1 { color: gold; }
+.trophy-2 { color: silver; }
+.trophy-3 { color: #cd7f32; }
+.trophy-4 { color: #b0b0b0; opacity: 0.7; }
+.trophy-place {
+    font-weight: 700;
+    font-size: 1.1rem;
+    margin-bottom: 4px;
+}
+.trophy-team {
+    font-size: 1.05rem;
+    text-align: center;
+    min-height: 1.5em;
+}
+</style>
+<div class="placements-trophies">
+    <div class="trophy-col">
+        <div class="trophy-icon trophy-1">🏆</div>
+        <div class="trophy-place">1st Place</div>
+        <div class="trophy-team">{{ placements.champion.team_name|default:"-" }}</div>
+    </div>
+    <div class="trophy-col">
+        <div class="trophy-icon trophy-2">🥈</div>
+        <div class="trophy-place">2nd Place</div>
+        <div class="trophy-team">{{ placements.runner_up.team_name|default:"-" }}</div>
+    </div>
+    <div class="trophy-col">
+        <div class="trophy-icon trophy-3">🥉</div>
+        <div class="trophy-place">3rd Place</div>
+        <div class="trophy-team">{{ placements.third_place.team_name|default:"-" }}</div>
+    </div>
+    <div class="trophy-col">
+        <div class="trophy-icon trophy-4">🏅</div>
+        <div class="trophy-place">4th Place</div>
+        <div class="trophy-team">{{ placements.fourth_place.team_name|default:"-" }}</div>
+    </div>
+</div>
+{% endif %}

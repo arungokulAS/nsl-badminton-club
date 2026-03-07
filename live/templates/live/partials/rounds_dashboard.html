@@ -1,0 +1,7 @@
+<div class="live-rounds-dashboard">
+    {% for round in rounds %}
+        <div class="live-round-card{% if current_round and current_round.id == round.id %} is-active{% endif %}{% if round.is_finished %} is-finished{% endif %}" data-round-id="{{ round.id }}" data-is-finished="{% if round.is_finished %}true{% else %}false{% endif %}" data-is-current="{% if current_round and current_round.id == round.id %}true{% else %}false{% endif %}">
+            <div class="live-round-name">{{ round.name }}</div>
+        </div>
+    {% endfor %}
+</div>

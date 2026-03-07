@@ -1,0 +1,184 @@
+{% load results_extras %}
+{% load static %}
+{% for round in rounds %}
+    <div class="round-results" data-round-results="{{ round.id }}">
+        {% if current_round and round.id != current_round.id and not round.is_finished and 'semi' not in round.name|lower %}
+            <div style="color:#fff;text-align:center;margin:12px 0;">This round has not started yet.</div>
+        {% elif round.name == 'Group Stage' %}
+            <div class="group-results-grid">
+                {% for group_table in group_tables %}
+                    <div class="group-results-item">
+                        <div class="group-results-title">
+                            {% if group_table.group.group_name|slice:":5" == "Group" %}
+                                {{ group_table.group.group_name }}
+                            {% else %}
+                                Group {{ group_table.group.group_name }}
+                            {% endif %}
+                        </div>
+                        <table class="results-table">
+                            <thead>
+                                <tr>
+                                    <th>Team</th>
+                                    <th>PTS</th>
+                                    <th>Def</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for row in group_table.rows|slice:":4" %}
+                                <tr>
+                                    <td>{{ row.team.team_name }}</td>
+                                    <td>{{ row.points }}</td>
+                                    <td>{{ row.diff }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endfor %}
+            </div>
+        {% elif round.name == 'Losers Final' %}
+            <div style="display:flex;flex-direction:column;align-items:center;margin-top:12px;">
+                <img src="{% static 'Untitled.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:14px 0 0 0;" />
+                <div class="gold-text" style="--gold-size:1.6rem;--gold-weight:700;letter-spacing:0.02em;text-align:center;margin-top:10px;">
+                    {% if losers_final_table and losers_final_table|length > 0 %}{{ losers_final_table.0.team.team_name }}{% else %}-{% endif %}
+                </div>
+                <img src="{% static 'Remove background project.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 0 0;" />
+                <div class="gold-text" style="--gold-size:1.4rem;--gold-weight:600;letter-spacing:0.02em;text-align:center;margin-top:6px;">
+                    {% if losers_final_table and losers_final_table|length > 1 %}{{ losers_final_table.1.team.team_name }}{% else %}-{% endif %}
+                </div>
+            </div>
+        {% elif round.name == 'Qualifier' %}
+            <table class="results-table prequarter-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Teams</th>
+                        <th>PD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in qualifier_table|slice:":16" %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ row.team.team_name }}</td>
+                        <td>{% if row.group %}{{ row.group }}{% else %}-{% endif %}</td>
+                        <td>{{ row.points_diff }}</td>
+                        <td>{{ row.points_diff }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;">No qualifier results yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% elif 'pre-quarter' in round.name|lower %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Teams</th>
+                        <th>PD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in prequarter_qualified %}
+                    <tr>
+                        <td>{{ row.rank }}</td>
+                        <td>{{ row.team.team_name }}</td>
+                        <td>{{ row.points_diff }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="3" style="text-align:center;">No qualified teams yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% elif round.name|lower == 'quarter' %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Teams</th>
+                        <th>PF</th>
+                        <th>PA</th>
+                        <th>PD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in quarter_top %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ row.team.team_name }}</td>
+                        <td>{% if quarter_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                        <td>{% if quarter_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                        <td>{% if quarter_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;">No quarter point table yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% elif 'semi' in round.name|lower %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Teams</th>
+                        <th>PF</th>
+                        <th>PA</th>
+                        <th>PD</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in semi_top %}
+                    <tr>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ row.team.team_name }}</td>
+                        <td>{% if semi_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                        <td>{% if semi_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                        <td>{% if semi_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" style="text-align:center;">No semi final point table yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% elif round.name == 'Final' %}
+            <div style="display:flex;flex-direction:column;align-items:center;margin-top:-16px;">
+                <img src="/static/pngwing.com.png" alt="Trophy" style="width:432px;height:432px;animation:trophy-bounce 1.6s infinite;filter:drop-shadow(0 0 96px #a855f7);margin-bottom:6px;" />
+                <div class="gold-text winner-animate" style="--gold-size:2.6rem;--gold-weight:800;margin-top:4px;letter-spacing:0.02em;text-align:center;">{% if winner_team %}{{ winner_team.team_name }}{% else %}-{% endif %}</div>
+                <img src="/static/edited-photo.png" alt="Runner-up" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 6px 0;" />
+                <div class="gold-text" style="--gold-size:1.6rem;--gold-weight:700;letter-spacing:0.02em;text-align:center;margin-top:4px;">{% if runner_up_team %}{{ runner_up_team.team_name }}{% else %}-{% endif %}</div>
+            </div>
+        {% else %}
+            <table class="results-table">
+                <thead>
+                    <tr>
+                        <th>Teams</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in matches %}
+                        {% if match.round.id == round.id %}
+                        <tr>
+                            <td>
+                                {% if scores|get_item:match.id and scores|get_item:match.id.winner %}
+                                    {{ scores|get_item:match.id.winner.team_name }}
+                                {% else %}
+                                    -
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endif %}
+                    {% endfor %}
+                </tbody>
+            </table>
+        {% endif %}
+    </div>
+{% endfor %}

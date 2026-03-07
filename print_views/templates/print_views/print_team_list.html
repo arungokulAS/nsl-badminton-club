@@ -1,29 +1,62 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Printable Team List</h1>
-<table border="1" cellspacing="0" cellpadding="6">
-    <thead>
-        <tr>
-            <th>Team Name</th>
-            <th>Group</th>
-            <th>Players</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for team in teams %}
-        <tr>
-            <td>{{ team.name }}</td>
-            <td>{{ team.group.name }}</td>
-            <td>
-                <ul>
-                {% for player in team.players.all %}
-                    <li>{{ player.name }}</li>
-                {% endfor %}
-                </ul>
-            </td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<button onclick="window.print()">Print</button>
+<div style="width:min(1100px, 94vw);margin:120px auto 40px auto;">
+    <h1 style="margin:0 0 4px 0;font-size:2.4rem;color:#fff;text-align:center;">TEAMS</h1>
+    <div style="width:100%;display:flex;justify-content:center;">
+        <div style="position:relative;display:inline-block;">
+            <div style="position:absolute;top:-16px;right:0;display:flex;gap:10px;">
+                <button onclick="window.print()" title="Print" class="print-icon-btn" aria-label="Print">
+                    <svg viewBox="0 0 32 32" class="print-icon"><rect x="6" y="10" width="20" height="12" rx="3" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="6" width="12" height="6" rx="2" stroke="white" stroke-width="2" fill="none"/></svg>
+                </button>
+                <a href="/print/teams.xlsx" title="Download" class="print-icon-btn" aria-label="Download">
+                    <svg viewBox="0 0 32 32" class="print-icon"><path d="M16 6v14" stroke="white" stroke-width="2" fill="none"/><path d="M10 16l6 6 6-6" stroke="white" stroke-width="2" fill="none"/><rect x="6" y="24" width="20" height="2" rx="1" stroke="white" stroke-width="2" fill="none"/></svg>
+                </a>
+            </div>
+                <table border="1" cellspacing="0" cellpadding="6" style="width:auto;border-collapse:collapse;border:2px solid rgba(255,255,255,0.6);table-layout:auto;margin-left:auto;margin-right:auto;margin-top:20px;">
+        <thead>
+            <tr>
+                <th style="padding:4px 6px;white-space:nowrap;">#</th>
+                <th style="padding:4px 6px;white-space:nowrap;">Team</th>
+                <th style="padding:4px 6px;white-space:nowrap;">Player 1</th>
+                <th style="padding:4px 6px;white-space:nowrap;">Player 2</th>
+            </tr>
+        </thead>
+        <tbody>
+        {% for team in teams %}
+            <tr>
+                <td style="padding:4px 6px;white-space:nowrap;">{{ forloop.counter }}</td>
+                <td style="padding:4px 6px;white-space:nowrap;">{{ team.team_name }}</td>
+                <td style="padding:4px 6px;white-space:nowrap;">{{ team.player1_name }}</td>
+                <td style="padding:4px 6px;white-space:nowrap;">{{ team.player2_name }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<style>
+.print-icon-btn {
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.12);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+}
+.print-icon-btn:hover {
+    border-color: rgba(168,85,247,0.8);
+    background: rgba(128,0,255,0.2);
+    transform: translateY(-1px);
+}
+.print-icon {
+    width: 22px;
+    height: 22px;
+}
+</style>
 {% endblock %}

@@ -7,22 +7,16 @@
             <th>Round</th>
             <th>Court</th>
             <th>Match</th>
-            <th>Referee(s)</th>
+            <th>Referee</th>
         </tr>
     </thead>
     <tbody>
     {% for match in matches %}
         <tr>
             <td>{{ match.round.name }}</td>
-            <td>{{ match.court.name }}</td>
+            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
             <td>{{ match.team1.team_name }} vs {{ match.team2.team_name }}</td>
-            <td>
-                {% for referee in match.court.referees.all %}
-                    {{ referee.name }}{% if not forloop.last %}, {% endif %}
-                {% empty %}
-                    -
-                {% endfor %}
-            </td>
+            <td>-</td>
         </tr>
     {% endfor %}
     </tbody>

@@ -1,25 +1,160 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Public Tournament Schedule</h2>
-{% for round in rounds %}
-    <h3>{{ round.name }}</h3>
-    <table border="1">
-        <tr>
-            <th>Court</th>
-            <th>Team 1</th>
-            <th>Team 2</th>
-            <th>Status</th>
-        </tr>
-        {% for match in matches %}
-            {% if match.round.id == round.id %}
-            <tr>
-                <td>{{ match.court.name }}</td>
-                <td>{{ match.team1.team_name }}</td>
-                <td>{{ match.team2.team_name }}</td>
-                <td>{{ match.status }}</td>
-            </tr>
-            {% endif %}
-        {% endfor %}
-    </table>
-{% endfor %}
+<style>
+    .public-schedule-container {
+        margin-top: 80px;
+        max-width: 1100px;
+        margin-left: auto;
+        margin-right: auto;
+        color: #fff;
+        position: relative;
+        min-height: 70vh;
+    }
+    .public-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        background: none;
+        box-shadow: 0 2px 18px 0 rgba(120,180,255,0.10);
+        color: #fff;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        font-size: 1.08rem;
+        overflow: hidden;
+        margin: 0 auto 22px auto;
+        border-radius: 28px;
+        border-left: 1px solid rgba(128,0,255,0.25) !important;
+        border-right: 1px solid rgba(128,0,255,0.25) !important;
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+        border-top: none !important;
+    }
+    .public-table th, .public-table td {
+        border: none !important;
+        background: none;
+        color: #fff;
+        padding: 0.85em 1.2em;
+        font-weight: 400;
+        text-align: left;
+        transition: background 0.25s, box-shadow 0.25s, color 0.18s;
+    }
+    .public-table th {
+        background: linear-gradient(120deg, rgba(60,30,120,0.32) 0%, rgba(30,60,120,0.28) 100%);
+        font-weight: 500;
+        color: #fff;
+        border-top-left-radius: 18px;
+        border-top-right-radius: 18px;
+        height: 54px;
+        font-size: 1.09rem;
+        letter-spacing: 0.01em;
+    }
+    .public-table tr:last-child td {
+        border: none !important;
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+    }
+    .public-table th:first-child {
+        border-top-left-radius: 18px;
+    }
+    .public-table th:last-child {
+        border-top-right-radius: 18px;
+    }
+    .public-table tbody tr:not(:last-child)::after {
+        content: '';
+        display: block;
+        height: 2px;
+        margin-top: -2px;
+        background: linear-gradient(90deg, rgba(128,0,255,0) 0%, rgba(128,0,255,0.25) 50%, rgba(128,0,255,0) 100%);
+        pointer-events: none;
+    }
+    .public-table tbody tr:not(:last-child) td {
+        border-bottom: 1px solid rgba(128,0,255,0.25) !important;
+    }
+    .public-round-title {
+        color: #fff;
+        text-align: left;
+        margin: 10px 0 8px 0;
+        font-weight: 600;
+    }
+    .schedule-title-glass {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        margin-bottom: 0.8rem;
+        background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+        filter: drop-shadow(0 4px 32px rgba(128,0,255,0.18)) drop-shadow(0 1.5px 0 rgba(255,255,255,0.10));
+        position: relative;
+        z-index: 2;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        backdrop-filter: blur(2.5px) saturate(1.2);
+        -webkit-backdrop-filter: blur(2.5px) saturate(1.2);
+        text-transform: uppercase;
+    }
+    .schedule-bg-title {
+        position: absolute;
+        top: 9%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12vw;
+        font-weight: 900;
+        color: #fff;
+        opacity: 0.12;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+        white-space: nowrap;
+        line-height: 1;
+        filter: blur(0.5px);
+        -webkit-mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+    }
+    .public-schedule-content {
+        position: relative;
+        z-index: 1;
+    }
+</style>
+<div class="public-schedule-container">
+    <div class="schedule-bg-title" aria-hidden="true">SCHEDULE</div>
+    <div class="public-schedule-content">
+        <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+            <h2 class="schedule-title-glass">Schedule</h2>
+        </div>
+
+        {% if current_round %}
+            <h3 class="public-round-title" style="text-align:center;">{{ current_round.name }}</h3>
+            {% for court in courts %}
+                <div style="width:100%;max-width:1000px;margin:0 auto 18px auto;">
+                    <h5 style="color:#fff;margin:24px 0 8px 0;text-align:left;">{{ court.name }}</h5>
+                    <table class="public-table">
+                        <thead>
+                        <tr>
+                            <th>Team 1</th>
+                            <th>Team 2</th>
+                            <th>Status</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+                        {% for match in matches %}
+                            {% if match.round.id == current_round.id and match.court.id == court.id %}
+                            <tr>
+                                <td>{{ match.team1.team_name }}</td>
+                                <td>{{ match.team2.team_name }}</td>
+                                <td>{{ match.status }}</td>
+                            </tr>
+                            {% endif %}
+                        {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% endfor %}
+        {% else %}
+            <div style="color:#fff;text-align:center;margin-top:24px;">No active round available.</div>
+        {% endif %}
+    </div>
+</div>
 {% endblock %}

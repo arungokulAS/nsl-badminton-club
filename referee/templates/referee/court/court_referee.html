@@ -1,7 +1,7 @@
 {% extends 'base.html' %}
 {% block content %}
 <div class="referee-court-container">
-    <h2>Court {{ court.number }}</h2>
+    <h2>Court {{ court.name }}</h2>
     <h3>Current Round: {{ round.name }}</h3>
     <div class="pending-matches">
         {% if matches %}
@@ -9,18 +9,18 @@
             {% for match in matches %}
                 <li>
                     <div class="match-info">
-                        <span>{{ match.team1.name }}</span> vs <span>{{ match.team2.name }}</span>
+                        <span>{{ match.team1.team_name }}</span> vs <span>{{ match.team2.team_name }}</span>
                     </div>
                     {% if not match.submitted %}
                     <form method="post" class="score-entry-form">
                         {% csrf_token %}
                         <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <input type="number" name="score1" placeholder="Score {{ match.team1.name }}" required min="0">
-                        <input type="number" name="score2" placeholder="Score {{ match.team2.name }}" required min="0">
+                        <input type="text" name="score1" placeholder="Score {{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                        <input type="text" name="score2" placeholder="Score {{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
                         <select name="winner" required>
                             <option value="">Select Winner</option>
-                            <option value="1">{{ match.team1.name }}</option>
-                            <option value="2">{{ match.team2.name }}</option>
+                            <option value="1">{{ match.team1.team_name }}</option>
+                            <option value="2">{{ match.team2.team_name }}</option>
                         </select>
                         <button type="submit">Submit</button>
                     </form>

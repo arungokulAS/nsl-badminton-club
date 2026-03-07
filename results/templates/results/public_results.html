@@ -1,34 +1,377 @@
 {% extends 'base.html' %}
 {% load results_extras %}
 {% block content %}
-<h2>Public Tournament Results</h2>
-{% for round in rounds %}
-    <h3>{{ round.name }}</h3>
-    <table border="1">
-        <tr>
-            <th>Court</th>
-            <th>Team 1</th>
-            <th>Team 2</th>
-            <th>Score</th>
-            <th>Status</th>
-        </tr>
-        {% for match in matches %}
-            {% if match.round.id == round.id %}
-            <tr>
-                <td>{{ match.court.name }}</td>
-                <td>{{ match.team1.team_name }}</td>
-                <td>{{ match.team2.team_name }}</td>
-                <td>
-                    {% if scores|get_item:match.id %}
-                        {{ scores|get_item:match.id.team1_score }} - {{ scores|get_item:match.id.team2_score }}
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>{{ match.status }}</td>
-            </tr>
-            {% endif %}
+<link rel="stylesheet" href="/static/gold-text.css" />
+<div style="margin-top:110px;display:flex;flex-direction:column;align-items:center;">
+    <h2 style="text-align:center;font-size:2.6rem;font-weight:800;margin-bottom:1.6rem;background:linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Public Tournament Results</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:18px;">
+        {% for round in rounds %}
+            <button type="button" class="round-tab" data-round-id="{{ round.id }}" style="padding:6px 12px;border-radius:16px;border:1px solid rgba(128,0,255,0.2);color:#c9a3ff;font-weight:600;background:transparent;cursor:pointer;">
+                {{ round.name }}
+            </button>
         {% endfor %}
-    </table>
-{% endfor %}
+    </div>
+    <style>
+        .round-tab.is-active {
+            border-color: rgba(168,85,247,0.85);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(128,0,255,0.35);
+        }
+        .winner-animate {
+            animation: winner-glow 1.8s ease-in-out infinite;
+            text-shadow: 0 0 12px rgba(168,85,247,0.65), 0 0 28px rgba(168,85,247,0.45);
+        }
+        @keyframes winner-glow {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 12px rgba(168,85,247,0.55), 0 0 26px rgba(168,85,247,0.35);
+            }
+            50% {
+                transform: scale(1.05);
+                text-shadow: 0 0 18px rgba(216,180,254,0.85), 0 0 40px rgba(168,85,247,0.65);
+            }
+        }
+        .round-results {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto 24px auto;
+        }
+        .round-results.is-active {
+            display: block;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            box-shadow: none;
+            color: #fff;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-size: 1.02rem;
+            margin: 0 auto 18px auto;
+            border: none;
+            border-radius: 0;
+        }
+        .results-table th,
+        .results-table td {
+            border: none !important;
+            background: transparent;
+            color: #fff;
+            padding: 0.45em 0.75em;
+            font-weight: 400;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .results-table thead tr {
+            background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+        }
+        .results-table th {
+            background: transparent;
+            font-weight: 500;
+            color: #fff;
+            height: 30px;
+            font-size: 1.02rem;
+            letter-spacing: 0.01em;
+        }
+        .prequarter-table th:first-child,
+        .prequarter-table td:first-child {
+            padding-left: 0.4em;
+            padding-right: 0.4em;
+            width: 48px;
+            text-align: left;
+        }
+        .prequarter-table th:nth-child(2),
+        .prequarter-table td:nth-child(2) {
+            padding-left: 0.5em;
+            padding-right: 0.6em;
+        }
+        .results-table tbody tr {
+            border-bottom: 1px solid rgba(255,255,255,0.08);
+        }
+        .group-results-title {
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: fit-content;
+            padding: 6px 14px;
+            border-radius: 10px 10px 10px 0;
+            background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-bottom: none;
+            box-shadow: 0 8px 24px 0 rgba(80,60,180,0.18), 0 0 0 1px rgba(255,255,255,0.06) inset;
+            backdrop-filter: blur(14px) saturate(1.4);
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #fff;
+            text-align: left;
+        }
+        .group-results-title + .results-table {
+            margin-top: 0;
+        }
+        .group-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            width: 100%;
+        }
+        .group-results-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        @media (max-width: 980px) {
+            .group-results-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+        @media (max-width: 640px) {
+            .group-results-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <div id="round-results-container">
+        {% include 'results/partials/round_results.html' %}
+    </div>
+    <style>
+        .bracket-layout {
+            display: grid;
+            grid-template-columns: 1.2fr 2.6fr 1.2fr;
+            gap: 24px;
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto 24px auto;
+            align-items: start;
+        }
+        .group-box {
+            background: rgba(0,0,0,0.08);
+            border: 1px solid rgba(128,0,255,0.2);
+            border-radius: 16px;
+            padding: 12px 14px;
+            margin-bottom: 14px;
+            box-shadow: 0 0 12px 2px rgba(128,0,255,0.18);
+            position: relative;
+        }
+        .group-box.left::after {
+            content: '';
+            position: absolute;
+            right: -18px;
+            top: 50%;
+            width: 18px;
+            border-top: 1px solid rgba(128,0,255,0.2);
+        }
+        .group-box.right::before {
+            content: '';
+            position: absolute;
+            left: -18px;
+            top: 50%;
+            width: 18px;
+            border-top: 1px solid rgba(128,0,255,0.2);
+        }
+        .group-title {
+            color: #a020f0;
+            font-weight: 700;
+            margin-bottom: 8px;
+            text-align: center;
+        }
+        .team-item {
+            color: #fff;
+            font-size: 0.9rem;
+            padding: 4px 0;
+            border-bottom: 1px solid rgba(128,0,255,0.12);
+        }
+        .team-item:last-child {
+            border-bottom: none;
+        }
+        .knockout-column {
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+        .round-title {
+            text-align: center;
+            color: #a020f0;
+            font-weight: 700;
+            margin-bottom: 6px;
+        }
+        .match-card {
+            background: rgba(0,0,0,0.08);
+            border: 1px solid rgba(128,0,255,0.2);
+            border-radius: 14px;
+            padding: 10px 12px;
+            box-shadow: 0 0 12px 2px rgba(128,0,255,0.18);
+        }
+        .match-team {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            font-size: 0.95rem;
+            color: #fff;
+        }
+        .match-score {
+            color: #c9a3ff;
+            font-weight: 600;
+        }
+        .bracket-side {
+            position: relative;
+            padding: 6px 12px;
+        }
+        .bracket-side.left {
+            border-right: 1px solid rgba(128,0,255,0.2);
+        }
+        .bracket-side.right {
+            border-left: 1px solid rgba(128,0,255,0.2);
+        }
+        .center-column {
+            display: grid;
+            grid-template-columns: repeat(6, 1fr);
+            gap: 20px;
+            align-items: start;
+        }
+        .round-column {
+            position: relative;
+            padding: 4px 8px;
+        }
+        .round-column::before {
+            content: '';
+            position: absolute;
+            left: -10px;
+            top: 10px;
+            bottom: 10px;
+            border-left: 1px solid rgba(128,0,255,0.2);
+        }
+        .round-column::after {
+            content: '';
+            position: absolute;
+            right: -10px;
+            top: 10px;
+            bottom: 10px;
+            border-right: 1px solid rgba(128,0,255,0.2);
+        }
+        .match-card {
+            position: relative;
+        }
+        .match-card::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 50%;
+            width: 14px;
+            border-top: 1px solid rgba(128,0,255,0.2);
+        }
+        .round-column:last-child .match-card::after {
+            display: none;
+        }
+        .winner-box {
+            margin-top: 6px;
+            padding: 4px 8px;
+            border-radius: 10px;
+            border: 1px solid rgba(128,0,255,0.2);
+            color: #c9a3ff;
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-align: center;
+            position: relative;
+        }
+        .winner-box::after {
+            content: '';
+            position: absolute;
+            right: -14px;
+            top: 50%;
+            width: 14px;
+            border-top: 1px solid rgba(128,0,255,0.2);
+        }
+        .round-column:last-child .winner-box::after {
+            display: none;
+        }
+    </style>
+    <script>
+        (function() {
+            var tabs = document.querySelectorAll('.round-tab');
+            var sections = document.querySelectorAll('[data-round-results]');
+            var selectedRoundId = '{{ current_round.id|default:"" }}';
+            var userSelectedRound = false;
+            var refreshTimer;
+
+            function setActive(roundId) {
+                tabs.forEach(function(tab) {
+                    tab.classList.toggle('is-active', tab.getAttribute('data-round-id') === roundId);
+                });
+                sections.forEach(function(section) {
+                    section.classList.toggle('is-active', section.getAttribute('data-round-results') === roundId);
+                });
+            }
+
+            function refreshResults() {
+                var url = '/tournament/results/api';
+                fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                    .then(function(response) { return response.json(); })
+                    .then(function(data) {
+                        var container = document.getElementById('round-results-container');
+                        if (container && data.round_results_html) {
+                            container.innerHTML = data.round_results_html;
+                        }
+                        var placementsContainer = document.getElementById('placements-container');
+                        if (placementsContainer && data.placements_html !== undefined) {
+                            placementsContainer.innerHTML = data.placements_html;
+                        }
+                        sections = document.querySelectorAll('[data-round-results]');
+                        if (!userSelectedRound && data.current_round_id) {
+                            selectedRoundId = String(data.current_round_id);
+                        }
+                        if (selectedRoundId) {
+                            setActive(selectedRoundId);
+                        }
+                    })
+                    .catch(function() {});
+            }
+
+            tabs.forEach(function(tab) {
+                tab.addEventListener('click', function() {
+                    selectedRoundId = tab.getAttribute('data-round-id');
+                    userSelectedRound = true;
+                    setActive(selectedRoundId);
+                });
+            });
+
+            if (selectedRoundId) {
+                setActive(selectedRoundId);
+            } else if (tabs.length) {
+                selectedRoundId = tabs[0].getAttribute('data-round-id');
+                setActive(selectedRoundId);
+            }
+
+            refreshResults();
+            refreshTimer = setInterval(refreshResults, 5000);
+        })();
+    </script>
+    <div id="placements-container" style="display:none;"></div>
+    <script>
+    // Show trophy icons only for selected round == 'Semi Final'
+    (function() {
+        function showPlacementsIfSemiFinal() {
+            var tabs = document.querySelectorAll('.round-tab');
+            var placementsContainer = document.getElementById('placements-container');
+            var activeTab = Array.from(tabs).find(tab => tab.classList.contains('is-active'));
+            if (activeTab && activeTab.textContent.trim() === 'Semi Final') {
+                placementsContainer.style.display = '';
+            } else {
+                placementsContainer.style.display = 'none';
+            }
+        }
+        showPlacementsIfSemiFinal();
+        document.querySelectorAll('.round-tab').forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                setTimeout(showPlacementsIfSemiFinal, 10);
+            });
+        });
+    })();
+    {% include 'results/partials/placements.html' %}
+    </script>
+
+</div>
 {% endblock %}

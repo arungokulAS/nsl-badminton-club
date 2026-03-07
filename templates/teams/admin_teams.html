@@ -58,6 +58,47 @@
         letter-spacing: 0.01em;
     }
 
+    .schedule-title-glass {
+        text-align: center;
+        font-size: 3.5rem;
+        font-weight: 800;
+        letter-spacing: -0.01em;
+        margin-bottom: 2.2rem;
+        background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        text-fill-color: transparent;
+        filter: drop-shadow(0 4px 32px rgba(128,0,255,0.18)) drop-shadow(0 1.5px 0 rgba(255,255,255,0.10));
+        position: relative;
+        z-index: 2;
+        padding-top: 0.5rem;
+        padding-bottom: 0.5rem;
+        backdrop-filter: blur(2.5px) saturate(1.2);
+        -webkit-backdrop-filter: blur(2.5px) saturate(1.2);
+        text-transform: uppercase;
+    }
+    .schedule-bg-title {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12vw;
+        font-weight: 900;
+        color: #fff;
+        opacity: 0.07;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+        white-space: nowrap;
+        line-height: 1;
+        filter: blur(0.5px);
+        -webkit-mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+    }
+
     /* (moved HTML out of style block) */
     }
     .teams-table tr:last-child td {
@@ -163,8 +204,11 @@
 </style>
 {% extends 'base.html' %}
 {% block content %}
-<div class="teams-admin-container">
-    <h2 style="text-align:center;color:#fff !important;">Team List</h2>
+<div class="teams-admin-container" style="position:relative;">
+    <div style="position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+        <h2 class="schedule-title-glass">Team List</h2>
+        <div class="schedule-bg-title" aria-hidden="true">TEAM LIST</div>
+    </div>
     {% if is_locked %}
         <div class="locked-msg" style="color:#fff !important;">Teams are locked. No changes allowed.</div>
         <form method="post" style="margin-bottom:24px;text-align:center;">

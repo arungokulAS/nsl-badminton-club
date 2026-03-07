@@ -18,7 +18,7 @@
     {% for match in matches %}
         <tr>
             <td>{{ match.round.name }}</td>
-            <td>{{ match.court.name }}</td>
+            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
             <td>{{ match.team1.team_name }}</td>
             <td>{{ match.team2.team_name }}</td>
             <td></td>

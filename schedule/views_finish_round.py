@@ -5,11 +5,21 @@ from matches.models import Match
 from results.models import Score
 from django.db import transaction
 
+STANDARD_ROUND_NAMES = [
+    'Group Stage',
+    'Qualifier',
+    'Pre-Quarter',
+    'Quarter',
+    'Semi Final',
+    'Losers Final',
+    'Final',
+]
+
 def admin_finish_round(request):
     if not request.session.get('is_admin'):
         return redirect('/admin/login')
 
-    rounds = Round.objects.all().order_by('order')
+    rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
     current_round = rounds.filter(is_finished=False).order_by('order').first() if rounds.exists() else None
     finished = False
 

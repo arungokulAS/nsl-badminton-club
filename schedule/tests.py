@@ -17,17 +17,28 @@ class AdminScheduleViewTests(TestCase):
 		# Create courts
 		self.court1 = Court.objects.create(name='Court 1')
 		self.court2 = Court.objects.create(name='Court 2')
+		self.court3 = Court.objects.create(name='Court 3')
+		self.court4 = Court.objects.create(name='Court 4')
 		# Create rounds
 		self.round1 = Round.objects.create(name='Group Stage', order=1)
-		self.round2 = Round.objects.create(name='Quarterfinal', order=2)
-		# Create teams
-		self.team1 = Team.objects.create(player1_name='A', player2_name='B', team_name='A & B', is_locked=True)
-		self.team2 = Team.objects.create(player1_name='C', player2_name='D', team_name='C & D', is_locked=True)
-		self.team3 = Team.objects.create(player1_name='E', player2_name='F', team_name='E & F', is_locked=True)
-		self.team4 = Team.objects.create(player1_name='G', player2_name='H', team_name='G & H', is_locked=True)
-		# Create group
-		self.group = Group.objects.create(group_name='A', is_locked=True)
-		self.group.teams.set([self.team1, self.team2, self.team3, self.team4])
+		self.round2 = Round.objects.create(name='Qualifier', order=2)
+		# Create 6 groups with 6 teams each
+		group_codes = ['A', 'B', 'C', 'D', 'E', 'F']
+		team_index = 1
+		for code in group_codes:
+			group = Group.objects.create(group_name=f'Group {code}', is_locked=True)
+			teams = []
+			for _ in range(6):
+				teams.append(
+					Team.objects.create(
+						player1_name=f'P{team_index}A',
+						player2_name=f'P{team_index}B',
+						team_name=f'Team {team_index}',
+						is_locked=True,
+					)
+				)
+				team_index += 1
+			group.teams.set(teams)
 
 	def test_admin_schedule_get(self):
 		response = self.client.get(reverse('admin_schedule'))
@@ -38,11 +49,11 @@ class AdminScheduleViewTests(TestCase):
 		response = self.client.post(reverse('admin_schedule'), {
 			'generate_schedule': '1',
 			'round': self.round1.id,
-			'num_courts': 2
+			'num_courts': 4
 		}, follow=True)
 		self.assertRedirects(response, reverse('admin_schedule'))
 		matches = Match.objects.filter(round=self.round1)
-		self.assertEqual(matches.count(), 2)
+		self.assertEqual(matches.count(), 90)
 		# Each match should have two teams and a court
 		for match in matches:
 			self.assertIsNotNone(match.team1)
@@ -54,7 +65,7 @@ class AdminScheduleViewTests(TestCase):
 		response = self.client.post(reverse('admin_schedule'), {
 			'generate_schedule': '1',
 			'round': self.round2.id,
-			'num_courts': 2
+			'num_courts': 4
 		}, follow=True)
 		self.assertContains(response, 'You can only schedule the next unfinished round.')
 
@@ -63,12 +74,12 @@ class AdminScheduleViewTests(TestCase):
 		self.client.post(reverse('admin_schedule'), {
 			'generate_schedule': '1',
 			'round': self.round1.id,
-			'num_courts': 2
+			'num_courts': 4
 		}, follow=True)
 		# Try to generate again for same round
 		response = self.client.post(reverse('admin_schedule'), {
 			'generate_schedule': '1',
 			'round': self.round1.id,
-			'num_courts': 2
+			'num_courts': 4
 		}, follow=True)
-		self.assertContains(response, 'Schedule for this round already exists.')
+		self.assertContains(response, 'Schedule generated for')

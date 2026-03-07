@@ -1,22 +1,439 @@
 {% extends 'base.html' %}
 {% block content %}
-<h2>Live Matches</h2>
-<table border="1">
-    <tr>
-        <th>Round</th>
-        <th>Court</th>
-        <th>Team 1</th>
-        <th>Team 2</th>
-        <th>Status</th>
-    </tr>
-    {% for match in matches %}
-    <tr>
-        <td>{{ match.round.name }}</td>
-        <td>{{ match.court.name }}</td>
-        <td>{{ match.team1.team_name }}</td>
-        <td>{{ match.team2.team_name }}</td>
-        <td>{{ match.status }}</td>
-    </tr>
-    {% endfor %}
-</table>
+<style>
+    .live-page {
+        margin-top: 110px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        color: #fff;
+    }
+    .live-title {
+        text-align: center;
+        font-size: 2.6rem;
+        font-weight: 800;
+        margin-bottom: 1.2rem;
+        background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .live-title-wrap {
+        position: relative;
+        width: 100%;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .live-bg-title {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12vw;
+        font-weight: 900;
+        color: #fff;
+        opacity: 0.07;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        pointer-events: none;
+        user-select: none;
+        z-index: 0;
+        white-space: nowrap;
+        line-height: 1;
+        filter: blur(0.5px);
+        -webkit-mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+        mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+    }
+    .live-section {
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto 28px auto;
+    }
+    #live-points-table {
+        max-width: 900px;
+    }
+    .live-table {
+        width: 100%;
+        table-layout: fixed;
+        border-collapse: collapse;
+        background: transparent;
+        box-shadow: none;
+        color: #fff;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        font-size: 1.02rem;
+        margin: 0 auto 18px auto;
+        border: none;
+        border-radius: 0;
+    }
+    .live-table th, .live-table td {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+        border: none !important;
+        background: transparent;
+        color: #fff;
+        padding: 0.35em 0.45em;
+        font-weight: 400;
+        text-align: left;
+    }
+    .live-table th:nth-child(1),
+    .live-table td:nth-child(1) {
+        width: 50%;
+    }
+    .live-table th:nth-child(2),
+    .live-table td:nth-child(2),
+    .live-table th:nth-child(3),
+    .live-table td:nth-child(3),
+    .live-table th:nth-child(4),
+    .live-table td:nth-child(4),
+    .live-table th:nth-child(5),
+    .live-table td:nth-child(5),
+    .live-table th:nth-child(6),
+    .live-table td:nth-child(6) {
+        width: 10%;
+        text-align: center;
+    }
+    .qualifier-table {
+        table-layout: fixed;
+    }
+    .qualifier-table th:nth-child(1),
+    .qualifier-table td:nth-child(1) {
+        width: 6%;
+        text-align: center;
+    }
+    .qualifier-table th:nth-child(2),
+    .qualifier-table td:nth-child(2) {
+        width: 32%;
+        text-align: left;
+    }
+    .qualifier-table th:nth-child(3),
+    .qualifier-table td:nth-child(3) {
+        width: 6%;
+        text-align: center;
+    }
+    .qualifier-table th:nth-child(n+4),
+    .qualifier-table td:nth-child(n+4) {
+        width: 7%;
+        text-align: center;
+    }
+    .prequarter-live-table th:nth-child(1),
+    .prequarter-live-table td:nth-child(1) {
+        width: 36px;
+        padding-left: 0.4em;
+        padding-right: 0.4em;
+        text-align: left;
+    }
+    .prequarter-live-table th:nth-child(2),
+    .prequarter-live-table td:nth-child(2) {
+        width: auto;
+        padding-left: 0.35em;
+        padding-right: 0.35em;
+        text-align: left;
+    }
+    .prequarter-live-table th:nth-child(3),
+    .prequarter-live-table td:nth-child(3),
+    .prequarter-live-table th:nth-child(4),
+    .prequarter-live-table td:nth-child(4),
+    .prequarter-live-table th:nth-child(5),
+    .prequarter-live-table td:nth-child(5) {
+        width: 64px;
+        text-align: center;
+    }
+    .live-table thead tr {
+        background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+        border-top-left-radius: 0;
+        border-top-right-radius: 0;
+    }
+    .live-table thead th:first-child {
+        border-top-left-radius: 0;
+    }
+    .live-table thead th:last-child {
+        border-top-right-radius: 18px;
+    }
+    .live-table tbody tr:last-child td:first-child {
+        border-bottom-left-radius: 18px;
+    }
+    .live-table tbody tr:last-child td:last-child {
+        border-bottom-right-radius: 18px;
+    }
+    .live-table th {
+        background: transparent;
+        font-weight: 500;
+        color: #fff;
+        height: 30px;
+        font-size: 1.02rem;
+        letter-spacing: 0.01em;
+        border-bottom: 1px solid rgba(255,255,255,0.18);
+    }
+    .live-table tbody tr {
+        border-bottom: 1px solid rgba(255,255,255,0.08);
+    }
+    .points-section h3 {
+        margin: 18px 0 10px 0;
+        text-align: center;
+    }
+    .points-header {
+        display: flex;
+        align-items: baseline;
+        justify-content: center;
+        gap: 12px;
+    }
+    .points-note {
+        font-size: 0.95rem;
+        opacity: 0.8;
+    }
+    .group-table {
+        margin-bottom: 18px;
+        position: relative;
+        width: 100%;
+    }
+    .group-table h4 {
+        margin: 0;
+        text-align: left;
+    }
+    .group-title-badge {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        min-width: 110px;
+        padding: 6px 14px;
+        border-radius: 10px 10px 10px 0;
+        background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+        border: 1px solid rgba(255,255,255,0.18);
+        border-bottom: none;
+        box-shadow: 0 8px 24px 0 rgba(80,60,180,0.18), 0 0 0 1px rgba(255,255,255,0.06) inset;
+        backdrop-filter: blur(14px) saturate(1.4);
+        -webkit-backdrop-filter: blur(14px) saturate(1.4);
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+    }
+    .qualified-row {
+        background: linear-gradient(90deg, rgba(0,128,0,0.85) 0%, rgba(0,128,0,0.60) 50%, rgba(0,128,0,0.0) 100%);
+    }
+    .eliminated-row {
+        background: linear-gradient(90deg, rgba(212,41,1,0.85) 0%, rgba(212,41,1,0.60) 50%, rgba(212,41,1,0.0) 100%);
+    }
+    .best-loser-row {
+        background: linear-gradient(90deg, rgba(255,165,0,0.85) 0%, rgba(255,165,0,0.60) 50%, rgba(255,165,0,0.0) 100%);
+    }
+    .losers-final-orange-row {
+        background: linear-gradient(90deg, rgba(255,140,0,0.85) 0%, rgba(255,140,0,0.60) 50%, rgba(255,140,0,0.0) 100%);
+    }
+    .diff-positive {
+        color: #7fffd4;
+        font-weight: 600;
+    }
+    .diff-negative {
+        color: #ff6b6b;
+        font-weight: 600;
+    }
+    .diff-neutral {
+        color: #d1d5db;
+        font-weight: 600;
+    }
+    .group-slider {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+    }
+    .group-slider-track {
+        flex: 1;
+        overflow: hidden;
+    }
+    .group-slide {
+        display: none;
+    }
+    .group-slide.is-active {
+        display: block;
+    }
+    .group-nav {
+        background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%);
+        color: #fff;
+        border: none;
+        border-radius: 12px;
+        width: 44px;
+        height: 44px;
+        font-size: 1.6rem;
+        line-height: 1;
+        cursor: pointer;
+        box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset;
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .group-nav:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 18px 0 rgba(120,80,255,0.28), 0 0 0 3px rgba(120,80,255,0.22) inset;
+    }
+    .live-rounds-dashboard {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        width: 100%;
+        max-width: 1100px;
+        margin: 0 auto 16px auto;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+    .live-round-card {
+        background: transparent;
+        border: none;
+        padding: 0;
+        text-align: center;
+        color: #fff;
+        box-shadow: none;
+        backdrop-filter: none;
+        -webkit-backdrop-filter: none;
+    }
+    .live-round-card.is-active .live-round-name {
+        color: #a855f7;
+        text-shadow: 0 0 10px rgba(168,85,247,0.6);
+    }
+    .live-round-card.is-finished .live-round-name {
+        opacity: 0.75;
+    }
+    .live-round-name {
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+        white-space: nowrap;
+    }
+</style>
+
+<div class="live-page">
+    <div id="live-rounds-dashboard" data-current-round-id="{% if current_round %}{{ current_round.id }}{% endif %}">
+        {% include 'live/partials/rounds_dashboard.html' %}
+    </div>
+    <div class="live-section" id="live-points-table">
+        <div class="live-title-wrap">
+            <h2 class="live-title">Point Table</h2>
+            <div class="live-bg-title" aria-hidden="true">Point Table</div>
+        </div>
+        <div id="live-points-content">
+            {% include 'live/partials/point_tables.html' %}
+        </div>
+    </div>
+</div>
+
+<script>
+    function initGroupSlider() {
+        var slider = document.querySelector('[data-group-slider]');
+        if (!slider) return;
+        var slides = slider.querySelectorAll('[data-group-slide]');
+        var prevBtn = slider.querySelector('[data-group-prev]');
+        var nextBtn = slider.querySelector('[data-group-next]');
+        var index = 0;
+
+        function showSlide(newIndex) {
+            if (!slides.length) return;
+            index = (newIndex + slides.length) % slides.length;
+            slides.forEach(function(slide, i) {
+                slide.classList.toggle('is-active', i === index);
+            });
+        }
+
+        showSlide(0);
+
+        if (prevBtn) {
+            prevBtn.onclick = function() {
+                showSlide(index - 1);
+            };
+        }
+        if (nextBtn) {
+            nextBtn.onclick = function() {
+                showSlide(index + 1);
+            };
+        }
+    }
+
+    var selectedRoundId = null;
+    var userSelectedRound = false;
+
+    function bindRoundClicks() {
+        var roundsContainer = document.getElementById('live-rounds-dashboard');
+        if (!roundsContainer) return;
+        var cards = roundsContainer.querySelectorAll('[data-round-id]');
+        cards.forEach(function(card) {
+            card.onclick = function() {
+                selectedRoundId = card.getAttribute('data-round-id');
+                userSelectedRound = true;
+                cards.forEach(function(c) { c.classList.remove('is-active'); });
+                card.classList.add('is-active');
+                refreshLiveTables();
+            };
+        });
+    }
+
+    function showLoadingSpinner() {
+        var pointsContainer = document.getElementById('live-points-content');
+        if (pointsContainer) {
+            var spinner = document.createElement('div');
+            spinner.className = 'live-loading-spinner';
+            spinner.innerHTML = '<div style="display:flex;justify-content:center;align-items:center;height:60px;"><svg width="40" height="40" viewBox="0 0 40 40" style="animation:spin 1s linear infinite;"><circle cx="20" cy="20" r="16" stroke="#a855f7" stroke-width="4" fill="none" stroke-dasharray="100" stroke-dashoffset="60"></circle></svg></div>';
+            pointsContainer.appendChild(spinner);
+        }
+    }
+
+    function hideLoadingSpinner() {
+        var spinner = document.querySelector('.live-loading-spinner');
+        if (spinner) spinner.remove();
+    }
+
+    function refreshLiveTables() {
+        showLoadingSpinner();
+        var roundsContainer = document.getElementById('live-rounds-dashboard');
+        var currentRoundId = roundsContainer ? roundsContainer.getAttribute('data-current-round-id') : null;
+        if (!selectedRoundId) {
+            selectedRoundId = currentRoundId;
+        }
+        var url = '/tournament/live/api';
+        if (selectedRoundId) {
+            url += '?round_id=' + encodeURIComponent(selectedRoundId);
+        }
+        fetch(url)
+            .then(response => response.json())
+            .then(data => {
+                hideLoadingSpinner();
+                if (data.rounds_html) {
+                    var roundsContainer = document.getElementById('live-rounds-dashboard');
+                    if (roundsContainer) {
+                        roundsContainer.innerHTML = data.rounds_html;
+                        if (data.current_round_id) {
+                            roundsContainer.setAttribute('data-current-round-id', data.current_round_id);
+                        }
+                        bindRoundClicks();
+                        if (!userSelectedRound && data.current_round_id) {
+                            selectedRoundId = String(data.current_round_id);
+                        }
+                    }
+                }
+                if (data.points_html) {
+                    var pointsContainer = document.getElementById('live-points-content');
+                    if (pointsContainer) {
+                        pointsContainer.innerHTML = data.points_html;
+                        initGroupSlider();
+                    }
+                }
+                if (!userSelectedRound && selectedRoundId) {
+                    var activeCard = document.querySelector('[data-round-id="' + selectedRoundId + '"]');
+                    if (activeCard) {
+                        document.querySelectorAll('[data-round-id]').forEach(function(c) { c.classList.remove('is-active'); });
+                        activeCard.classList.add('is-active');
+                    }
+                }
+            })
+            .catch(() => { hideLoadingSpinner(); });
+    }
+
+    initGroupSlider();
+    bindRoundClicks();
+    setInterval(refreshLiveTables, 2000);
+
+    // Spinner CSS
+    var style = document.createElement('style');
+    style.innerHTML = '.live-loading-spinner { position: absolute; left: 0; right: 0; top: 0; bottom: 0; background: rgba(30,30,30,0.12); z-index: 99; display: flex; align-items: center; justify-content: center; } @keyframes spin { 100% { transform: rotate(360deg); } }';
+    document.head.appendChild(style);
+</script>
 {% endblock %}
