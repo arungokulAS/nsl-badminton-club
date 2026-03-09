@@ -54,6 +54,8 @@ def public_results(request):
             winner_team = final_score.winner
             runner_up_team = placements['runner_up']
     losers_round = Round.objects.filter(name__iexact='Losers Final').first()
+    losers_final_table = None
+    losers_final_has_scores = False
     if losers_round:
         losers_match = Match.objects.filter(round=losers_round).first()
         losers_score = Score.objects.filter(match=losers_match, locked=True).first() if losers_match else None
@@ -61,8 +63,6 @@ def public_results(request):
             placements['third_place'] = losers_score.winner
             placements['fourth_place'] = losers_match.team1 if losers_score.winner != losers_match.team1 else losers_match.team2
         # Fetch Losers Final point table from live logic
-        losers_final_table = None
-        losers_final_has_scores = False
         if losers_round:
             match = Match.objects.filter(round=losers_round).select_related('team1', 'team2').first()
             if match:
@@ -90,26 +90,26 @@ def public_results(request):
                         },
                     ]
                     losers_final_table.sort(key=lambda row: (row['points_diff'] if row['points_diff'] is not None else float('-inf')), reverse=True)
-        context = {
-            'rounds': rounds,
-            'matches': matches,
-            'scores': scores,
-            'round_has_scores': round_has_scores,
-            'placements': placements,
-            'groups': groups,
-            'current_round': current_round,
-            'group_tables': group_tables,
-            'qualifier_table': qualifier_table,
-            'prequarter_table': prequarter_table,
-            'prequarter_qualified': prequarter_qualified,
-            'quarter_qualified': quarter_qualified,
-            'quarter_top': quarter_top,
-            'quarter_has_scores': quarter_has_scores,
-            'semi_top': semi_top,
-            'semi_has_scores': semi_has_scores,
-            'winner_team': winner_team,
-            'runner_up_team': runner_up_team,
-            'losers_final_table': losers_final_table,
-            'losers_final_has_scores': losers_final_has_scores,
-        }
+    context = {
+        'rounds': rounds,
+        'matches': matches,
+        'scores': scores,
+        'round_has_scores': round_has_scores,
+        'placements': placements,
+        'groups': groups,
+        'current_round': current_round,
+        'group_tables': group_tables,
+        'qualifier_table': qualifier_table,
+        'prequarter_table': prequarter_table,
+        'prequarter_qualified': prequarter_qualified,
+        'quarter_qualified': quarter_qualified,
+        'quarter_top': quarter_top,
+        'quarter_has_scores': quarter_has_scores,
+        'semi_top': semi_top,
+        'semi_has_scores': semi_has_scores,
+        'winner_team': winner_team,
+        'runner_up_team': runner_up_team,
+        'losers_final_table': losers_final_table,
+        'losers_final_has_scores': losers_final_has_scores,
+    }
     return render(request, 'results/public_results.html', context)
