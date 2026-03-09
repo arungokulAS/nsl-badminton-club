@@ -39,12 +39,23 @@ DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
 _env_allowed_hosts = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
 _render_external_host = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').strip()
+_render_external_url = os.getenv('RENDER_EXTERNAL_URL', '').strip()
+_render_external_url_host = ''
+if _render_external_url:
+    _render_external_url_host = _render_external_url.replace('https://', '').replace('http://', '').split('/')[0].strip()
+
 ALLOWED_HOSTS = _env_allowed_hosts[:]
 if _render_external_host:
     ALLOWED_HOSTS.append(_render_external_host)
-ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '[::1]'])
+if _render_external_url_host:
+    ALLOWED_HOSTS.append(_render_external_url_host)
+ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '[::1]', '0.0.0.0'])
 if '.onrender.com' not in ALLOWED_HOSTS:
     ALLOWED_HOSTS.append('.onrender.com')
+if os.getenv('ALLOW_ALL_HOSTS', '').lower() == 'true':
+    ALLOWED_HOSTS.append('*')
+
+ALLOWED_HOSTS = list(dict.fromkeys(ALLOWED_HOSTS))
 
 
 # Application definition
