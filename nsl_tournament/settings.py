@@ -144,6 +144,21 @@ USE_TZ = True
 STATIC_URL = '/static/'
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
-CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',') if origin.strip()]
+def _normalize_csrf_origin(origin):
+    origin = origin.strip()
+    if not origin:
+        return None
+    if origin.startswith('http://') or origin.startswith('https://'):
+        return origin
+    return f'https://{origin}'
+
+CSRF_TRUSTED_ORIGINS = [
+    origin
+    for origin in (
+        _normalize_csrf_origin(value)
+        for value in os.getenv('CSRF_TRUSTED_ORIGINS', '').split(',')
+    )
+    if origin
+]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
