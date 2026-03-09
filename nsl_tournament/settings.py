@@ -37,7 +37,14 @@ SECRET_KEY = os.getenv('SECRET_KEY', 'dev-secret-key-change-me')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv('DEBUG', 'False').lower() == 'true'
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
+_env_allowed_hosts = [host.strip() for host in os.getenv('ALLOWED_HOSTS', '').split(',') if host.strip()]
+_render_external_host = os.getenv('RENDER_EXTERNAL_HOSTNAME', '').strip()
+ALLOWED_HOSTS = _env_allowed_hosts[:]
+if _render_external_host:
+    ALLOWED_HOSTS.append(_render_external_host)
+ALLOWED_HOSTS.extend(['localhost', '127.0.0.1', '[::1]'])
+if '.onrender.com' not in ALLOWED_HOSTS:
+    ALLOWED_HOSTS.append('.onrender.com')
 
 
 # Application definition
@@ -160,5 +167,7 @@ CSRF_TRUSTED_ORIGINS = [
     )
     if origin
 ]
+if _render_external_host:
+    CSRF_TRUSTED_ORIGINS.append(f'https://{_render_external_host}')
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
