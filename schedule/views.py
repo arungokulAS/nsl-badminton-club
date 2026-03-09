@@ -32,6 +32,7 @@ def admin_schedule(request):
 		return center
 
 	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
+	admin_password_env = os.environ.get('ADMIN_PASSWORD', 'admin123')
 	# Ensure standard round flow (includes Losers Final)
 	standard_rounds = [
 		('Group Stage', 1),
@@ -50,7 +51,7 @@ def admin_schedule(request):
 	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
 	# Lock court count after admin confirmation
 	if 'unlock_courts' in request.POST and request.method == 'POST':
-		if request.POST.get('admin_password') == 'admin123':  # Replace with your admin password logic
+		if request.POST.get('admin_password') == admin_password_env:
 			request.session['locked_num_courts'] = None
 			messages.success(request, 'Court selection unlocked. You can now select a new number of courts.')
 			return redirect('/admin/schedule')
@@ -62,7 +63,7 @@ def admin_schedule(request):
 	if request.method == 'POST' and 'finish_round' in request.POST:
 		admin_password = request.POST.get('admin_password')
 		round_id = int(request.POST.get('round_id', 0))
-		if admin_password != 'admin123':
+		if admin_password != admin_password_env:
 			messages.error(request, 'Invalid admin password.')
 			return redirect('/admin/schedule')
 		finish_round = Round.objects.filter(id=round_id).first()
@@ -306,7 +307,7 @@ def admin_schedule(request):
 		admin_password = request.POST.get('admin_password')
 		print(f"DEBUG: admin_password received: {admin_password}")
 		locked_num_courts = int(request.POST.get('num_courts', 0))
-		if admin_password == 'admin123' and locked_num_courts:
+		if admin_password == admin_password_env and locked_num_courts:
 			request.session['locked_num_courts'] = locked_num_courts
 			print(f"DEBUG: locked_num_courts set to {locked_num_courts}")
 			request.session.save()  # Force session save
