@@ -139,6 +139,8 @@
                 <td>
                     {% if score and score.locked %}
                         <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
+                    {% elif score and not score.locked %}
+                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
                     {% elif match.status == 'awaiting_admin_confirmation' %}
                         <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
                     {% else %}
