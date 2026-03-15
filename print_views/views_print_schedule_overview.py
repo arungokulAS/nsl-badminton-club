@@ -1,4 +1,5 @@
 from django.shortcuts import render
+from collections import OrderedDict
 from matches.models import Match
 from schedule.models import Round
 
@@ -19,9 +20,20 @@ def print_schedule_overview(request):
         round_matches = Match.objects.select_related('team1', 'team2', 'court', 'round', 'group').filter(
             round=round_obj
         ).order_by('court__id', 'id')
+        court_groups = OrderedDict()
+        for match in round_matches:
+            court = match.court
+            court_key = court.id if court else 'unassigned'
+            if court_key not in court_groups:
+                court_groups[court_key] = {
+                    'court': court,
+                    'matches': [],
+                }
+            court_groups[court_key]['matches'].append(match)
         round_tables.append({
             'round': round_obj,
             'matches': list(round_matches),
+            'court_groups': list(court_groups.values()),
         })
     context = {
         'round_tables': round_tables,

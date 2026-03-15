@@ -21,38 +21,43 @@
     {% for table in round_tables %}
         <div class="round-panel" data-round-panel="{{ table.round.id }}">
             <h3 class="round-panel-title">{{ table.round.name }}</h3>
-            <table class="print-table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        {% if table.round.name == 'Group Stage' %}
-                            <th>Group</th>
-                        {% endif %}
-                        <th>Court</th>
-                        <th>Team 1</th>
-                        <th>Team 2</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for match in table.matches %}
+            {% if table.court_groups %}
+                {% for court_group in table.court_groups %}
+                    <h4 class="court-group-title">{% if court_group.court %}{{ court_group.court.name }}{% else %}Unassigned Court{% endif %}</h4>
+                    <table class="print-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                {% if table.round.name == 'Group Stage' %}
+                                    <th>Group</th>
+                                {% endif %}
+                                <th>Team 1</th>
+                                <th>Team 2</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in court_group.matches %}
+                                <tr>
+                                    <td>{{ forloop.counter }}</td>
+                                    {% if table.round.name == 'Group Stage' %}
+                                        <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
+                                    {% endif %}
+                                    <td>{% if match.team1 %}{{ match.team1.team_name }}{% else %}-{% endif %}</td>
+                                    <td>{% if match.team2 %}{{ match.team2.team_name }}{% else %}-{% endif %}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endfor %}
+            {% else %}
+                <table class="print-table">
+                    <tbody>
                         <tr>
-                            <td>{{ forloop.counter }}</td>
-                            {% if table.round.name == 'Group Stage' %}
-                                <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
-                            {% endif %}
-                            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
-                            <td>{% if match.team1 %}{{ match.team1.team_name }}{% else %}-{% endif %}</td>
-                            <td>{% if match.team2 %}{{ match.team2.team_name }}{% else %}-{% endif %}</td>
-                            <td>{{ match.status }}</td>
+                            <td colspan="5">No matches scheduled for this round.</td>
                         </tr>
-                    {% empty %}
-                        <tr>
-                            <td colspan="6">No matches scheduled for this round.</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            {% endif %}
         </div>
     {% endfor %}
 </div>
@@ -137,6 +142,11 @@
     font-weight: 600;
     font-size: 1.3rem;
 }
+.court-group-title {
+    margin: 18px 0 10px 0;
+    font-weight: 600;
+    font-size: 1.1rem;
+}
 .print-table {
     width: 100%;
     border-collapse: collapse;
@@ -154,6 +164,9 @@
     background: rgba(128,0,255,0.18);
     text-align: left;
     font-weight: 600;
+}
+.print-table td {
+    text-align: left;
 }
 @media print {
     .round-tabs,
