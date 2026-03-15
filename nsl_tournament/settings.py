@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+from django.core.exceptions import ImproperlyConfigured
 
 import dj_database_url
 
@@ -123,6 +124,11 @@ DATABASES = {
         conn_max_age=600,
     )
 }
+
+if os.getenv('RENDER', '').lower() == 'true' and DATABASES['default'].get('ENGINE') == 'django.db.backends.sqlite3':
+    raise ImproperlyConfigured(
+        'Render deployment requires PostgreSQL. Set DATABASE_URL to your Render PostgreSQL connection string.'
+    )
 
 
 # Password validation
