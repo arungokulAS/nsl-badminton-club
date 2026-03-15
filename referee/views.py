@@ -82,8 +82,12 @@ def referee_court_page(request, court_id):
 			'message': 'Referee token expired for this round.',
 		}, status=403)
 
-	# Only show matches for this court, this round, not completed
-	matches = Match.objects.filter(court=court, round=round_obj, status='scheduled')
+	# Only show matches for this court, this round, not completed, and not already submitted
+	matches = Match.objects.filter(
+		court=court,
+		round=round_obj,
+		status='scheduled',
+	).exclude(score__isnull=False).order_by('court__id', 'id')
 
 	if request.method == 'POST':
 		match_id = request.POST.get('match_id')
@@ -119,16 +123,10 @@ def referee_court_page(request, court_id):
 		)
 		return redirect(request.path + f'?token={token}')
 
-	# Mark matches as submitted if score exists
-	match_list = []
-	for m in matches:
-		m.submitted = Score.objects.filter(match=m).exists()
-		match_list.append(m)
-
 	context = {
 		'court': court,
 		'round': round_obj,
-		'matches': match_list,
+		'matches': matches,
 	}
 	return render(request, 'referee/court/court_referee.html', context)
 
