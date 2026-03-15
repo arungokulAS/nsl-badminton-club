@@ -4,6 +4,7 @@ from schedule.models import Court, Round
 from groups.models import Group
 from matches.models import Match
 from results.models import Score
+from teams.models import Team
 from .tokens import validate_referee_token
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
@@ -61,6 +62,11 @@ def referee_court_page(request, court_id):
 	if not token_data or int(token_data['court_id']) != int(court_id):
 		return render(request, 'referee/court/invalid_token.html', {
 			'message': 'Invalid or expired referee token.',
+		}, status=403)
+	teams = Team.objects.all().order_by('id')
+	if not teams.exists() or not teams.first().is_locked:
+		return render(request, 'referee/court/invalid_token.html', {
+			'message': 'Referee access is disabled until teams are locked.',
 		}, status=403)
 
 	court = get_object_or_404(Court, id=court_id)
