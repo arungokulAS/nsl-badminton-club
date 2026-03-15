@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/6.0/ref/settings/
 
 from pathlib import Path
 import os
+import sys
 from django.core.exceptions import ImproperlyConfigured
 
 import dj_database_url
@@ -125,7 +126,15 @@ DATABASES = {
     )
 }
 
-if os.getenv('RENDER', '').lower() == 'true' and DATABASES['default'].get('ENGINE') == 'django.db.backends.sqlite3':
+_build_safe_commands = {'collectstatic', 'migrate', 'import_data', 'create_admin', 'check'}
+_current_command = sys.argv[1] if len(sys.argv) > 1 else ''
+_is_build_command = _current_command in _build_safe_commands
+
+if (
+    os.getenv('RENDER', '').lower() == 'true'
+    and not _is_build_command
+    and DATABASES['default'].get('ENGINE') == 'django.db.backends.sqlite3'
+):
     raise ImproperlyConfigured(
         'Render deployment requires PostgreSQL. Set DATABASE_URL to your Render PostgreSQL connection string.'
     )
