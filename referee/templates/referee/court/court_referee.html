@@ -1,5 +1,72 @@
 {% extends 'base.html' %}
 {% block content %}
+<style>
+    .referee-court-container {
+        width: min(1000px, 92vw);
+        margin: 80px auto 40px auto;
+        color: #fff;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+    }
+    .referee-court-container h2,
+    .referee-court-container h3 {
+        text-align: center;
+        color: #fff;
+        margin: 0 0 12px 0;
+    }
+    .pending-matches ul {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+    .pending-matches li {
+        background: rgba(0,0,0,0.18);
+        border: 1px solid rgba(128,0,255,0.2);
+        border-radius: 14px;
+        padding: 16px;
+    }
+    .match-info {
+        margin-bottom: 10px;
+        font-weight: 600;
+        color: #fff;
+    }
+    .score-entry-form {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        align-items: center;
+    }
+    .score-entry-form input,
+    .score-entry-form select {
+        border: 1px solid rgba(128,0,255,0.2);
+        border-radius: 8px;
+        padding: 6px 10px;
+        background: rgba(30,30,40,0.55);
+        color: #fff;
+        font-size: 1.02rem;
+        font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+        box-shadow: 0 2px 8px 0 rgba(31,38,135,0.10);
+    }
+    .score-entry-form select option {
+        color: #111;
+    }
+    .score-entry-form button {
+        background: linear-gradient(120deg, rgba(128,0,255,0.32) 0%, rgba(80,0,120,0.32) 100%);
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        padding: 8px 22px;
+        font-weight: 600;
+        box-shadow: 0 2px 12px 0 rgba(128,0,255,0.10);
+        cursor: pointer;
+    }
+    .submitted {
+        color: #cdd4ff;
+        font-weight: 600;
+    }
+</style>
 <div class="referee-court-container">
     <h2>Court {{ court.name }}</h2>
     <h3>Current Round: {{ round.name }}</h3>
