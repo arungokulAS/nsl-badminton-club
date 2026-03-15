@@ -1,17 +1,9 @@
-{% extends "base.html" %}
-{% load print_extras %}
+{% extends 'base.html' %}
 {% block content %}
-<div class="groups-print-wrap">
-    <h1 class="groups-print-title">GROUPS</h1>
-    <div class="groups-print-actions">
-        <button onclick="window.print()" title="Print" class="print-icon-btn" aria-label="Print">
-            <svg viewBox="0 0 32 32" class="print-icon"><rect x="6" y="10" width="20" height="12" rx="3" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="6" width="12" height="6" rx="2" stroke="white" stroke-width="2" fill="none"/></svg>
-        </button>
-        <a href="/print/groups.xlsx" title="Download" class="print-icon-btn" aria-label="Download">
-            <svg viewBox="0 0 32 32" class="print-icon"><path d="M16 6v14" stroke="white" stroke-width="2" fill="none"/><path d="M10 16l6 6 6-6" stroke="white" stroke-width="2" fill="none"/><rect x="6" y="24" width="20" height="2" rx="1" stroke="white" stroke-width="2" fill="none"/></svg>
-        </a>
-    </div>
-    <div class="groups-list">
+<div class="groups-admin-content" style="position:relative;z-index:1;margin-top:110px;">
+    <div class="groups-bg-title" aria-hidden="true">GROUPS</div>
+    <h2 class="groups-title-glass">Groups</h2>
+    <div class="groups-list" id="groups-list">
         {% for group in groups %}
         <div class="group-block">
             <h3>Group {{ group.group_name }}</h3>
@@ -24,23 +16,23 @@
         {% endfor %}
     </div>
 </div>
-.groups-print-wrap {
-    width: min(1100px, 94vw);
-    margin: 120px auto 40px auto;
-    position: relative;
+<style>
+body {
+    background: url('/static/envato-labs-image-edit (1).png') center center/cover no-repeat fixed, linear-gradient(120deg, #1a1a2e 0%, #16213e 100%) !important;
+    color: #fff !important;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
 }
-.groups-print-title {
-    margin: 0 0 8px 0;
-    font-size: 2.4rem;
+.groups-admin-container {
+    max-width: 1100px;
+    margin: 48px auto 40px auto;
+    background: none !important;
+    border: none !important;
+    border-radius: 28px;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+    padding: 38px 36px 36px 36px;
     color: #fff;
-    text-align: center;
-}
-.groups-print-actions {
-    position: absolute;
-    top: 4px;
-    right: 0;
-    display: flex;
-    gap: 10px;
 }
 .groups-list {
     display: grid;
@@ -48,18 +40,21 @@
     column-gap: 6px;
     row-gap: 40px;
     justify-items: center;
-    margin-top: 18px;
 }
 .group-block {
     background: none !important;
-    border: 1.5px solid rgba(128,0,255,0.75) !important;
-    box-shadow: 0 0 12px 2px rgba(128,0,255,0.32), 0 0 0 2px rgba(128,0,255,0.18) inset;
+    border: none !important;
+    box-shadow: none !important;
     border-radius: 18px;
-    padding: 18px 28px;
+    padding: 18px 28px 18px 28px;
     min-width: 220px;
     max-width: 340px;
     width: 100%;
+    box-shadow: none !important;
+    border: 1.5px solid rgba(128,0,255,0.75) !important;
+    box-shadow: 0 0 12px 2px rgba(128,0,255,0.32), 0 0 0 2px rgba(128,0,255,0.18) inset;
     box-sizing: border-box;
+    overflow-x: auto;
     color: #fff;
 }
 .group-block h3 {
@@ -70,7 +65,7 @@
     letter-spacing: 0.01em;
     background: linear-gradient(120deg, rgba(128,0,255,0.32) 0%, rgba(80,0,120,0.32) 100%) !important;
     border-radius: 12px 12px 0 0;
-    padding: 10px 0;
+    padding: 10px 0 10px 0;
     box-shadow: 0 2px 12px 0 rgba(128,0,255,0.10);
 }
 .group-block ul {
@@ -85,34 +80,51 @@
     text-overflow: unset;
     max-width: 100%;
     font-size: 1.08em;
-    padding: 10px 0;
+    padding: 10px 0 10px 0;
     border-bottom: 1px solid rgba(128,0,255,0.25);
+    box-shadow: none;
 }
 .group-block li:last-child {
     border-bottom: none;
 }
-<style>
-.print-icon-btn {
-    border: 1px solid rgba(255,255,255,0.25);
-    background: rgba(0,0,0,0.12);
+.groups-title-glass {
+    text-align: center;
+    font-size: 3.5rem;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 2.2rem;
+    background: linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-fill-color: transparent;
+    filter: drop-shadow(0 4px 32px rgba(128,0,255,0.18)) drop-shadow(0 1.5px 0 rgba(255,255,255,0.10));
+    position: relative;
+    z-index: 2;
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+    backdrop-filter: blur(2.5px) saturate(1.2);
+    -webkit-backdrop-filter: blur(2.5px) saturate(1.2);
+}
+.groups-bg-title {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 12vw;
+    font-weight: 900;
     color: #fff;
-    padding: 6px 10px;
-    border-radius: 14px;
-    cursor: pointer;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
-}
-.print-icon-btn:hover {
-    border-color: rgba(168,85,247,0.8);
-    background: rgba(128,0,255,0.2);
-    transform: translateY(-1px);
-}
-.print-icon {
-    width: 22px;
-    height: 22px;
+    opacity: 0.07;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    pointer-events: none;
+    user-select: none;
+    z-index: 0;
+    white-space: nowrap;
+    line-height: 1;
+    filter: blur(0.5px);
+    -webkit-mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
+    mask-image: linear-gradient(to bottom, #fff 50%, transparent 100%);
 }
 @media (max-width: 900px) {
     .groups-list {
@@ -125,4 +137,18 @@
     }
 }
 </style>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const teamNames = Array.from(document.querySelectorAll('.team-name'));
+    let maxWidth = 0;
+    teamNames.forEach(el => {
+        const width = el.offsetWidth;
+        if (width > maxWidth) maxWidth = width;
+    });
+    maxWidth += 60;
+    document.querySelectorAll('.group-block').forEach(block => {
+        block.style.setProperty('--group-block-width', maxWidth + 'px');
+    });
+});
+</script>
 {% endblock %}
