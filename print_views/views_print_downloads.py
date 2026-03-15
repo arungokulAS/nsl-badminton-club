@@ -4,6 +4,8 @@ from django.http import HttpResponse
 from openpyxl import Workbook
 
 from groups.models import Group
+from matches.models import Match
+from schedule.models import Round
 from teams.models import Team
 
 
@@ -45,4 +47,42 @@ def download_group_list_xlsx(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
     response['Content-Disposition'] = 'attachment; filename="group_list.xlsx"'
+    return response
+
+
+def download_schedule_xlsx(request):
+    standard_round_names = [
+        'Group Stage',
+        'Qualifier',
+        'Pre-Quarter',
+        'Quarter',
+        'Semi Final',
+        'Losers Final',
+        'Final',
+    ]
+    rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=standard_round_names).order_by('order')
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Schedule'
+    sheet.append(['Round', 'Group', 'Court', 'Team 1', 'Team 2', 'Status'])
+    for round_obj in rounds:
+        matches = Match.objects.select_related('team1', 'team2', 'court', 'group').filter(round=round_obj).order_by('court__id', 'id')
+        for match in matches:
+            sheet.append([
+                round_obj.name,
+                match.group.group_name if match.group else '-',
+                match.court.name if match.court else '-',
+                match.team1.team_name if match.team1 else '-',
+                match.team2.team_name if match.team2 else '-',
+                match.status,
+            ])
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="schedule.xlsx"'
     return response

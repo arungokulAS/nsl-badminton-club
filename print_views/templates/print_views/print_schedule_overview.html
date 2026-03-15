@@ -1,27 +1,192 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Printable Schedule Overview</h1>
-<table border="1" cellspacing="0" cellpadding="6">
-    <thead>
-        <tr>
-            <th>Round</th>
-            <th>Court</th>
-            <th>Team 1</th>
-            <th>Team 2</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for match in matches %}
-        <tr>
-            <td>{{ match.round.name }}</td>
-            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
-            <td>{{ match.team1.team_name }}</td>
-            <td>{{ match.team2.team_name }}</td>
-            <td>{{ match.status }}</td>
-        </tr>
+<div class="print-schedule-wrap">
+    <h1 class="print-schedule-title">Schedule</h1>
+    <div class="round-tabs" role="tablist">
+        {% for table in round_tables %}
+            <button class="round-tab" type="button" data-round-id="{{ table.round.id }}" aria-pressed="false">
+                {{ table.round.name }}
+            </button>
+        {% endfor %}
+    </div>
+    <div class="print-schedule-actions">
+        <button onclick="window.print()" title="Print" class="print-icon-btn" aria-label="Print">
+            <svg viewBox="0 0 32 32" class="print-icon"><rect x="6" y="10" width="20" height="12" rx="3" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="6" width="12" height="6" rx="2" stroke="white" stroke-width="2" fill="none"/></svg>
+        </button>
+        <a href="/print/schedule.xlsx" title="Download" class="print-icon-btn" aria-label="Download">
+            <svg viewBox="0 0 32 32" class="print-icon"><path d="M16 6v14" stroke="white" stroke-width="2" fill="none"/><path d="M10 16l6 6 6-6" stroke="white" stroke-width="2" fill="none"/><rect x="6" y="24" width="20" height="2" rx="1" stroke="white" stroke-width="2" fill="none"/></svg>
+        </a>
+    </div>
+
+    {% for table in round_tables %}
+        <div class="round-panel" data-round-panel="{{ table.round.id }}">
+            <h3 class="round-panel-title">{{ table.round.name }}</h3>
+            <table class="print-table">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        {% if table.round.name == 'Group Stage' %}
+                            <th>Group</th>
+                        {% endif %}
+                        <th>Court</th>
+                        <th>Team 1</th>
+                        <th>Team 2</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in table.matches %}
+                        <tr>
+                            <td>{{ forloop.counter }}</td>
+                            {% if table.round.name == 'Group Stage' %}
+                                <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
+                            {% endif %}
+                            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
+                            <td>{% if match.team1 %}{{ match.team1.team_name }}{% else %}-{% endif %}</td>
+                            <td>{% if match.team2 %}{{ match.team2.team_name }}{% else %}-{% endif %}</td>
+                            <td>{{ match.status }}</td>
+                        </tr>
+                    {% empty %}
+                        <tr>
+                            <td colspan="6">No matches scheduled for this round.</td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
     {% endfor %}
-    </tbody>
-</table>
-<button onclick="window.print()">Print</button>
+</div>
+
+<style>
+.print-schedule-wrap {
+    width: min(1200px, 96vw);
+    margin: 120px auto 40px auto;
+    color: #fff;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.print-schedule-title {
+    text-align: center;
+    font-size: 2.6rem;
+    margin-bottom: 18px;
+}
+.round-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    margin-bottom: 16px;
+}
+.round-tab {
+    padding: 8px 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(168,85,247,0.4);
+    background: rgba(0,0,0,0.18);
+    color: #fff;
+    cursor: pointer;
+    font-weight: 600;
+    letter-spacing: 0.01em;
+    transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+.round-tab.active {
+    background: linear-gradient(120deg, rgba(128,0,255,0.35), rgba(80,0,120,0.35));
+    border-color: rgba(168,85,247,0.9);
+}
+.round-tab:focus-visible {
+    outline: 2px solid rgba(168,85,247,0.75);
+    outline-offset: 2px;
+}
+.print-schedule-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 0 0 18px 0;
+}
+.print-icon-btn {
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.12);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    text-decoration: none;
+}
+.print-icon-btn:hover {
+    border-color: rgba(168,85,247,0.8);
+    background: rgba(128,0,255,0.2);
+    transform: translateY(-1px);
+}
+.print-icon {
+    width: 22px;
+    height: 22px;
+}
+.round-panel {
+    display: none;
+    margin-bottom: 30px;
+}
+.round-panel.active {
+    display: block;
+}
+.round-panel-title {
+    margin: 0 0 12px 0;
+    text-align: left;
+    font-weight: 600;
+    font-size: 1.3rem;
+}
+.print-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(10, 10, 20, 0.4);
+    border: 1px solid rgba(128,0,255,0.35);
+    border-radius: 12px;
+    overflow: hidden;
+}
+.print-table th,
+.print-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(128,0,255,0.2);
+}
+.print-table thead th {
+    background: rgba(128,0,255,0.18);
+    text-align: left;
+    font-weight: 600;
+}
+@media print {
+    .round-tabs,
+    .print-schedule-actions {
+        display: none;
+    }
+    .round-panel {
+        display: block !important;
+    }
+}
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const tabs = Array.from(document.querySelectorAll('.round-tab'));
+    const panels = Array.from(document.querySelectorAll('.round-panel'));
+    if (!tabs.length) {
+        return;
+    }
+    const showRound = (roundId) => {
+        tabs.forEach(tab => {
+            const isActive = tab.dataset.roundId === roundId;
+            tab.classList.toggle('active', isActive);
+            tab.setAttribute('aria-pressed', isActive ? 'true' : 'false');
+        });
+        panels.forEach(panel => {
+            panel.classList.toggle('active', panel.dataset.roundPanel === roundId);
+        });
+    };
+    tabs.forEach(tab => {
+        tab.addEventListener('click', () => showRound(tab.dataset.roundId));
+    });
+    showRound(tabs[0].dataset.roundId);
+});
+</script>
 {% endblock %}
