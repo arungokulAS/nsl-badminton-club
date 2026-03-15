@@ -87,7 +87,7 @@ def referee_court_page(request, court_id):
 		court=court,
 		round=round_obj,
 		status='scheduled',
-	).exclude(score__isnull=False).order_by('court__id', 'id')
+	).exclude(score__isnull=False).order_by('id')
 
 	if request.method == 'POST':
 		match_id = request.POST.get('match_id')
@@ -95,6 +95,11 @@ def referee_court_page(request, court_id):
 		score2 = request.POST.get('score2')
 		winner = request.POST.get('winner')
 		match = get_object_or_404(Match, id=match_id, court=court, round=round_obj)
+		try:
+			score1 = int(score1)
+			score2 = int(score2)
+		except (TypeError, ValueError):
+			return HttpResponseForbidden('Invalid score values.')
 		if match.status != 'scheduled':
 			return HttpResponseForbidden('Match is not available for scoring.')
 		# Prevent double submission
