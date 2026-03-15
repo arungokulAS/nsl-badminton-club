@@ -25,6 +25,20 @@ def admin_schedule(request):
 	if not request.session.get('is_admin'):
 		return redirect('/admin/login')
 
+	def ensure_default_courts():
+		if Court.objects.exists():
+			return
+		Court.objects.bulk_create([
+			Court(name='Court 1'),
+			Court(name='Court 2'),
+			Court(name='Court 3'),
+			Court(name='Court 4'),
+			Court(name='Court 5'),
+			Court(name='Court 6'),
+			Court(name='Court 7'),
+			Court(name='Court 8'),
+		])
+
 	def get_center_courts(courts_list):
 		center = [court for court in courts_list if court.id in (3, 4)]
 		if not center:
@@ -32,6 +46,7 @@ def admin_schedule(request):
 		return center
 
 	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
+	ensure_default_courts()
 	admin_password_env = os.environ.get('ADMIN_PASSWORD', 'admin123')
 	# Ensure standard round flow (includes Losers Final)
 	standard_rounds = [
