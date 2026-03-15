@@ -117,18 +117,35 @@ def download_schedule_xlsx(request):
     workbook = Workbook()
     sheet = workbook.active
     sheet.title = 'Schedule'
-    sheet.append(['Round', 'Group', 'Court', 'Team 1', 'Team 2', 'Status'])
     for round_obj in rounds:
-        matches = Match.objects.select_related('team1', 'team2', 'court', 'group').filter(round=round_obj).order_by('court__id', 'id')
+        matches = Match.objects.select_related('team1', 'team2', 'court', 'group').filter(
+            round=round_obj
+        ).order_by('court__id', 'id')
+        sheet.append([round_obj.name])
+        current_court = None
         for match in matches:
-            sheet.append([
-                round_obj.name,
-                match.group.group_name if match.group else '-',
-                match.court.name if match.court else '-',
-                match.team1.team_name if match.team1 else '-',
-                match.team2.team_name if match.team2 else '-',
-                match.status,
-            ])
+            court_name = match.court.name if match.court else 'Unassigned Court'
+            if court_name != current_court:
+                current_court = court_name
+                sheet.append([f'Court: {current_court}'])
+                if round_obj.name == 'Group Stage':
+                    sheet.append(['#', 'Group', 'Team 1', 'Team 2'])
+                else:
+                    sheet.append(['#', 'Team 1', 'Team 2'])
+            if round_obj.name == 'Group Stage':
+                sheet.append([
+                    '',
+                    match.group.group_name if match.group else '-',
+                    match.team1.team_name if match.team1 else '-',
+                    match.team2.team_name if match.team2 else '-',
+                ])
+            else:
+                sheet.append([
+                    '',
+                    match.team1.team_name if match.team1 else '-',
+                    match.team2.team_name if match.team2 else '-',
+                ])
+        sheet.append([])
 
     output = BytesIO()
     workbook.save(output)
