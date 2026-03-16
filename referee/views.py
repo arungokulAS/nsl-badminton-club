@@ -100,6 +100,10 @@ def referee_court_page(request, court_id):
 			score2 = int(score2)
 		except (TypeError, ValueError):
 			return HttpResponseForbidden('Invalid score values.')
+		if winner not in ('1', '2'):
+			return HttpResponseForbidden('Winner selection is required.')
+		if not match.team1 or not match.team2:
+			return HttpResponseForbidden('Match teams are missing.')
 		if match.status != 'scheduled':
 			return HttpResponseForbidden('Match is not available for scoring.')
 		# Prevent double submission
