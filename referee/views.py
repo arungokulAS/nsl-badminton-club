@@ -12,6 +12,7 @@ from .tokens import generate_referee_token
 from schedule.models import Court, Round
 from django.urls import reverse
 import logging
+from django.db import transaction, IntegrityError
 
 logger = logging.getLogger("referee")
 
@@ -106,19 +107,24 @@ def referee_court_page(request, court_id):
 			return HttpResponseForbidden('Match teams are missing.')
 		if match.status != 'scheduled':
 			return HttpResponseForbidden('Match is not available for scoring.')
-		# Prevent double submission
-		if Score.objects.filter(match=match).exists():
+		# Save score as awaiting admin confirmation (handle concurrent submissions safely)
+		try:
+			with transaction.atomic():
+				score, created = Score.objects.get_or_create(
+					match=match,
+					defaults={
+						'team1_score': score1,
+						'team2_score': score2,
+						'winner': match.team1 if winner == '1' else match.team2,
+						'locked': False,
+					},
+				)
+				if not created:
+					return HttpResponseForbidden('Score already submitted for this match.')
+				match.status = 'awaiting_admin_confirmation'
+				match.save(update_fields=['status'])
+		except IntegrityError:
 			return HttpResponseForbidden('Score already submitted for this match.')
-		# Save score as awaiting admin confirmation
-		Score.objects.create(
-			match=match,
-			team1_score=score1,
-			team2_score=score2,
-			winner=match.team1 if winner == '1' else match.team2,
-			locked=False
-		)
-		match.status = 'awaiting_admin_confirmation'
-		match.save()
 		logger.info(
 			"Referee submission: match=%s court=%s round=%s team1=%s team2=%s score1=%s score2=%s winner=%s",
 			match.id,
