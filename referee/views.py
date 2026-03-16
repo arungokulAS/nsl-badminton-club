@@ -72,6 +72,11 @@ def referee_court_page(request, court_id):
 	court = get_object_or_404(Court, id=court_id)
 	round_id = token_data['round_id']
 	round_obj = get_object_or_404(Round, id=round_id)
+	active_round = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).filter(is_finished=False).order_by('order').first()
+	if active_round and round_obj.id != active_round.id:
+		return render(request, 'referee/court/invalid_token.html', {
+			'message': 'Referee access is limited to the current active round.',
+		}, status=403)
 	if round_obj.is_finished:
 		return render(request, 'referee/court/invalid_token.html', {
 			'message': 'Referee token expired for this round.',
