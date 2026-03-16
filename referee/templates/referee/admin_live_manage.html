@@ -118,6 +118,7 @@
             <table class="live-table" style="margin-bottom:18px;width:100%;">
             <thead>
             <tr>
+                <th>#</th>
                 {% if show_group_column %}<th>Group</th>{% endif %}
                 <th>Team 1</th>
                 <th>Score</th>
@@ -131,6 +132,7 @@
             {% for match in court_group.list %}
             {% with score=scores|get_item:match.id %}
             <tr>
+                <td>{{ forloop.counter }}</td>
                 {% if show_group_column %}<td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>{% endif %}
                 <td>{{ match.team1.team_name }}</td>
                 <td>{% if score %}{{ score.team1_score }}{% else %}-{% endif %}</td>
