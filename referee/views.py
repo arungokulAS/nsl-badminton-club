@@ -82,12 +82,12 @@ def referee_court_page(request, court_id):
 			'message': 'Referee token expired for this round.',
 		}, status=403)
 
-	# Only show matches for this court, this round, not completed, and not already submitted
+	# Only show matches for this court, this round, and not already submitted
 	matches = Match.objects.filter(
 		court=court,
 		round=round_obj,
-		status='scheduled',
-	).exclude(score__isnull=False).order_by('id')
+		score__isnull=True,
+	).order_by('id')
 
 	if request.method == 'POST':
 		match_id = request.POST.get('match_id')
