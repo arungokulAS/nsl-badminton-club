@@ -42,7 +42,7 @@
                 <div class="gold-text" style="--gold-size:1.6rem;--gold-weight:700;letter-spacing:0.02em;text-align:center;margin-top:10px;">
                     {% if losers_final_table and losers_final_table|length > 0 %}{{ losers_final_table.0.team.team_name }}{% else %}-{% endif %}
                 </div>
-                <img src="{% static 'Remove background project.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 0 0;" />
+                <img src="{% static 'remove-background-project.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 0 0;" />
                 <div class="gold-text" style="--gold-size:1.4rem;--gold-weight:600;letter-spacing:0.02em;text-align:center;margin-top:6px;">
                     {% if losers_final_table and losers_final_table|length > 1 %}{{ losers_final_table.1.team.team_name }}{% else %}-{% endif %}
                 </div>
@@ -134,7 +134,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in semi_top %}
+                    {% for row in semi_qualified %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ row.team.team_name }}</td>

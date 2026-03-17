@@ -105,6 +105,7 @@ def public_results(request):
         'quarter_qualified': quarter_qualified,
         'quarter_top': quarter_top,
         'quarter_has_scores': quarter_has_scores,
+        'semi_qualified': semi_qualified,
         'semi_top': semi_top,
         'semi_has_scores': semi_has_scores,
         'winner_team': winner_team,
