@@ -3,7 +3,7 @@ services:
     name: nsl-tournament
     env: python
     buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate && python manage.py import_data && python manage.py create_admin
-    startCommand: gunicorn nsl_tournament.wsgi:application
+    startCommand: gunicorn nsl_tournament.wsgi:application --bind 0.0.0.0:$PORT
     autoDeploy: true
     envVars:
       - key: DJANGO_SETTINGS_MODULE
