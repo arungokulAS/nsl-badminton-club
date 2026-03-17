@@ -91,58 +91,62 @@ def referee_court_page(request, court_id):
 	).order_by('id')
 
 	if request.method == 'POST':
-		match_id = request.POST.get('match_id')
-		score1 = request.POST.get('score1')
-		score2 = request.POST.get('score2')
-		winner = request.POST.get('winner')
-		if not match_id:
-			return HttpResponseForbidden('Match is required.')
 		try:
-			match_id_int = int(match_id)
-		except (TypeError, ValueError):
-			return HttpResponseForbidden('Invalid match id.')
-		match = get_object_or_404(Match, id=match_id_int, court=court, round=round_obj)
-		try:
-			score1 = int(score1)
-			score2 = int(score2)
-		except (TypeError, ValueError):
-			return HttpResponseForbidden('Invalid score values.')
-		if winner not in ('1', '2'):
-			return HttpResponseForbidden('Winner selection is required.')
-		if not match.team1 or not match.team2:
-			return HttpResponseForbidden('Match teams are missing.')
-		if match.status != 'scheduled':
-			return HttpResponseForbidden('Match is not available for scoring.')
-		# Save score as awaiting admin confirmation (handle concurrent submissions safely)
-		try:
-			with transaction.atomic():
-				score, created = Score.objects.get_or_create(
-					match=match,
-					defaults={
-						'team1_score': score1,
-						'team2_score': score2,
-						'winner': match.team1 if winner == '1' else match.team2,
-						'locked': False,
-					},
-				)
-				if not created:
-					return HttpResponseForbidden('Score already submitted for this match.')
-				match.status = 'awaiting_admin_confirmation'
-				match.save(update_fields=['status'])
-		except IntegrityError:
-			return HttpResponseForbidden('Score already submitted for this match.')
-		logger.info(
-			"Referee submission: match=%s court=%s round=%s team1=%s team2=%s score1=%s score2=%s winner=%s",
-			match.id,
-			court.id,
-			round_obj.id,
-			match.team1_id,
-			match.team2_id,
-			score1,
-			score2,
-			match.team1_id if winner == '1' else match.team2_id,
-		)
-		return redirect(request.path + f'?token={token}')
+			match_id = request.POST.get('match_id')
+			score1 = request.POST.get('score1')
+			score2 = request.POST.get('score2')
+			winner = request.POST.get('winner')
+			if not match_id:
+				return HttpResponseForbidden('Match is required.')
+			try:
+				match_id_int = int(match_id)
+			except (TypeError, ValueError):
+				return HttpResponseForbidden('Invalid match id.')
+			match = get_object_or_404(Match, id=match_id_int, court=court, round=round_obj)
+			try:
+				score1 = int(score1)
+				score2 = int(score2)
+			except (TypeError, ValueError):
+				return HttpResponseForbidden('Invalid score values.')
+			if winner not in ('1', '2'):
+				return HttpResponseForbidden('Winner selection is required.')
+			if not match.team1 or not match.team2:
+				return HttpResponseForbidden('Match teams are missing.')
+			if match.status != 'scheduled':
+				return HttpResponseForbidden('Match is not available for scoring.')
+			# Save score as awaiting admin confirmation (handle concurrent submissions safely)
+			try:
+				with transaction.atomic():
+					score, created = Score.objects.get_or_create(
+						match=match,
+						defaults={
+							'team1_score': score1,
+							'team2_score': score2,
+							'winner': match.team1 if winner == '1' else match.team2,
+							'locked': False,
+						},
+					)
+					if not created:
+						return HttpResponseForbidden('Score already submitted for this match.')
+					match.status = 'awaiting_admin_confirmation'
+					match.save(update_fields=['status'])
+			except IntegrityError:
+				return HttpResponseForbidden('Score already submitted for this match.')
+			logger.info(
+				"Referee submission: match=%s court=%s round=%s team1=%s team2=%s score1=%s score2=%s winner=%s",
+				match.id,
+				court.id,
+				round_obj.id,
+				match.team1_id,
+				match.team2_id,
+				score1,
+				score2,
+				match.team1_id if winner == '1' else match.team2_id,
+			)
+			return redirect(request.path + f'?token={token}')
+		except Exception:
+			logger.exception("Referee submission failed")
+			return HttpResponseForbidden('Unable to submit score. Please retry.')
 
 	context = {
 		'court': court,
