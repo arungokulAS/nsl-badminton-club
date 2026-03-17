@@ -1,5 +1,5 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from schedule.models import Court, Round
 from groups.models import Group
 from matches.models import Match
@@ -7,6 +7,8 @@ from results.models import Score
 from teams.models import Team
 from .tokens import validate_referee_token
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.cache import never_cache
+from django.template.loader import render_to_string
 from django.utils import timezone
 from .tokens import generate_referee_token
 from schedule.models import Court, Round
@@ -161,6 +163,7 @@ from results.models import Score
 from django.contrib import messages
 from django.db import transaction
 
+@never_cache
 def admin_live_manage(request):
 	if not request.session.get('is_admin'):
 		return redirect('/admin/login')
@@ -214,3 +217,37 @@ def admin_live_manage(request):
 		'show_group_column': bool(current_round and current_round.name == 'Group Stage'),
 	}
 	return render(request, 'referee/admin_live_manage.html', context)
+
+
+@never_cache
+def admin_live_manage_fragment(request):
+	if not request.session.get('is_admin'):
+		return JsonResponse({'html': ''}, status=403)
+
+	matches = Match.objects.select_related('team1', 'team2', 'court', 'round').filter(
+		round__order__in=[1, 2, 3, 4, 5, 6, 7],
+		round__name__in=STANDARD_ROUND_NAMES,
+	).order_by('court__id', 'id')
+	current_round = Round.objects.filter(
+		order__in=[1, 2, 3, 4, 5, 6, 7],
+		name__in=STANDARD_ROUND_NAMES,
+	).filter(is_finished=False).order_by('order').first()
+	if not current_round:
+		current_round = Round.objects.filter(
+			order__in=[1, 2, 3, 4, 5, 6, 7],
+			name__in=STANDARD_ROUND_NAMES,
+		).order_by('-order').first()
+	if current_round:
+		matches = matches.filter(round=current_round)
+	# Show only pending/confirmed updates from referee
+	matches = matches.filter(status__in=['scheduled', 'awaiting_admin_confirmation', 'completed'])
+	scores = {s.match_id: s for s in Score.objects.all()}
+
+	context = {
+		'matches': matches,
+		'scores': scores,
+		'current_round': current_round,
+		'show_group_column': bool(current_round and current_round.name == 'Group Stage'),
+	}
+	html = render_to_string('referee/partials/admin_live_manage_table.html', context, request=request)
+	return JsonResponse({'html': html})

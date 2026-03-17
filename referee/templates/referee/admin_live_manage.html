@@ -111,78 +111,32 @@
     <div style="text-align:center;color:#fff;font-weight:500;margin-top:-6px;margin-bottom:18px;opacity:0.85;">{% if current_round %}{{ current_round.name }}{% else %}Round{% endif %}</div>
     <div style="height:12px;"></div>
 
-    {% regroup matches by court as court_groups %}
-    {% for court_group in court_groups %}
-        <div style="width:100%;max-width:1000px;margin:0 auto 18px auto;">
-            <h3 style="margin:24px 0 8px 0;text-align:left;color:#fff;">{{ court_group.grouper.name }}</h3>
-            <table class="live-table" style="margin-bottom:18px;width:100%;">
-            <thead>
-            <tr>
-                <th>#</th>
-                {% if show_group_column %}<th>Group</th>{% endif %}
-                <th>Team 1</th>
-                <th>Score</th>
-                <th>Team 2</th>
-                <th>Score</th>
-                <th>Confirmation</th>
-                <th>Action</th>
-            </tr>
-            </thead>
-            <tbody>
-            {% for match in court_group.list %}
-            {% with score=scores|get_item:match.id %}
-            <tr>
-                <td>{{ forloop.counter }}</td>
-                {% if show_group_column %}<td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>{% endif %}
-                <td>{{ match.team1.team_name }}</td>
-                <td>{% if score %}{{ score.team1_score }}{% else %}-{% endif %}</td>
-                <td>{{ match.team2.team_name }}</td>
-                <td>{% if score %}{{ score.team2_score }}{% else %}-{% endif %}</td>
-                <td>
-                    {% if score and score.locked %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
-                    {% elif score and not score.locked %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
-                    {% elif match.status == 'awaiting_admin_confirmation' %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
-                    {% else %}
-                        -
-                    {% endif %}
-                </td>
-                <td>
-                    {% if match.round.is_finished %}
-                        Locked
-                    {% elif score and score.locked %}
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="match_id" value="{{ match.id }}">
-                            <button type="submit" name="edit_score" value="1" title="Edit" aria-label="Edit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.24em 0.6em; font-size: 0.95em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 40px; min-height: 30px; text-align: center; user-select: none; overflow: hidden;">
-                                <svg viewBox="0 0 32 32" width="16" height="16" aria-hidden="true"><path d="M6 22l2 4 4-2 12-12-4-4-12 12z" stroke="white" stroke-width="2" fill="none"/><path d="M18 6l4 4" stroke="white" stroke-width="2" fill="none"/></svg>
-                            </button>
-                        </form>
-                    {% else %}
-                        <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;">
-                            {% csrf_token %}
-                            <input type="hidden" name="match_id" value="{{ match.id }}">
-                            <input type="text" name="team1_score" value="{{ score.team1_score|default:'' }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 48px; min-width: 48px; max-width: 48px; letter-spacing: 0.02em; text-align:center;">
-                            <input type="text" name="team2_score" value="{{ score.team2_score|default:'' }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 48px; min-width: 48px; max-width: 48px; letter-spacing: 0.02em; text-align:center;">
-                            <button type="submit" title="Save" aria-label="Save" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.24em 0.6em; font-size: 0.95em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 40px; min-height: 30px; text-align: center; user-select: none; overflow: hidden;">
-                                <svg viewBox="0 0 32 32" width="16" height="16" aria-hidden="true"><rect x="6" y="6" width="20" height="20" rx="2" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="6" width="12" height="8" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="18" width="12" height="8" stroke="white" stroke-width="2" fill="none"/></svg>
-                            </button>
-                        </form>
-                    {% endif %}
-                </td>
-            </tr>
-            {% endwith %}
-            {% endfor %}
-            </tbody>
-            </table>
-        </div>
-    {% endfor %}
+    <div id="live-manage-table">
+        {% include 'referee/partials/admin_live_manage_table.html' %}
+    </div>
 </div>
 <script>
-    setInterval(() => {
-        window.location.reload();
-    }, 15000);
+    const liveManageIntervalMs = 5000;
+    const liveManageEndpoint = '/referee/admin/live-manage/fragment';
+
+    async function refreshLiveManage() {
+        try {
+            const response = await fetch(liveManageEndpoint, { cache: 'no-store' });
+            if (!response.ok) {
+                return;
+            }
+            const data = await response.json();
+            if (data && data.html) {
+                const container = document.getElementById('live-manage-table');
+                if (container) {
+                    container.innerHTML = data.html;
+                }
+            }
+        } catch (error) {
+            console.warn('Live manage refresh failed', error);
+        }
+    }
+
+    setInterval(refreshLiveManage, liveManageIntervalMs);
 </script>
 {% endblock %}
