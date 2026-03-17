@@ -11,7 +11,7 @@ class Match(models.Model):
 	team1 = models.ForeignKey(Team, related_name='team1_matches', on_delete=models.CASCADE)
 	team2 = models.ForeignKey(Team, related_name='team2_matches', on_delete=models.CASCADE)
 	court = models.ForeignKey(Court, on_delete=models.SET_NULL, null=True)
-	status = models.CharField(max_length=20, default='scheduled')  # scheduled, completed, locked, etc.
+	status = models.CharField(max_length=50, default='scheduled')  # scheduled, completed, locked, etc.
 
 	def __str__(self):
 		group_str = f" [{self.group.group_name}]" if self.group else ""
