@@ -119,8 +119,36 @@
     const liveManageIntervalMs = 20000;
     const liveManageEndpoint = '/referee/admin/live-manage/fragment';
 
+    let liveManageIsEditing = false;
+    let liveManageResumeTimer = null;
+
+    function setLiveManageEditing(isEditing) {
+        liveManageIsEditing = isEditing;
+        if (liveManageResumeTimer) {
+            clearTimeout(liveManageResumeTimer);
+            liveManageResumeTimer = null;
+        }
+        if (isEditing) {
+            liveManageResumeTimer = setTimeout(() => {
+                liveManageIsEditing = false;
+            }, 15000);
+        }
+    }
+
+    function isLiveManageActive() {
+        const container = document.getElementById('live-manage-table');
+        if (!container) {
+            return false;
+        }
+        const active = document.activeElement;
+        return active && container.contains(active);
+    }
+
     async function refreshLiveManage() {
         try {
+            if (liveManageIsEditing || isLiveManageActive()) {
+                return;
+            }
             const response = await fetch(liveManageEndpoint, { cache: 'no-store' });
             if (!response.ok) {
                 return;
@@ -136,6 +164,27 @@
             console.warn('Live manage refresh failed', error);
         }
     }
+
+    document.addEventListener('focusin', (event) => {
+        const container = document.getElementById('live-manage-table');
+        if (container && container.contains(event.target)) {
+            setLiveManageEditing(true);
+        }
+    });
+
+    document.addEventListener('input', (event) => {
+        const container = document.getElementById('live-manage-table');
+        if (container && container.contains(event.target)) {
+            setLiveManageEditing(true);
+        }
+    });
+
+    document.addEventListener('submit', (event) => {
+        const container = document.getElementById('live-manage-table');
+        if (container && container.contains(event.target)) {
+            setLiveManageEditing(false);
+        }
+    });
 
     setInterval(refreshLiveManage, liveManageIntervalMs);
 </script>
