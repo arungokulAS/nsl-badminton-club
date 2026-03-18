@@ -177,50 +177,55 @@ def admin_live_manage(request):
 	scores = {s.match_id: s for s in Score.objects.all()}
 
 	if request.method == 'POST':
-		match_id_raw = request.POST.get('match_id')
 		try:
-			match_id = int(match_id_raw)
-		except (TypeError, ValueError):
-			messages.error(request, 'Invalid match id.')
-			return redirect('/admin/live-manage')
-		if 'edit_score' in request.POST:
-			with transaction.atomic():
-				score = Score.objects.filter(match_id=match_id).first()
-				if not score:
-					messages.error(request, 'Score not found for this match.')
-				elif score.locked:
-					score.locked = False
-					score.save(update_fields=['locked'])
-					messages.success(request, 'Score unlocked for editing.')
-				else:
-					messages.info(request, 'Score is already editable.')
-			return redirect('/admin/live-manage')
-
-		try:
-			team1_score = int(request.POST.get('team1_score'))
-			team2_score = int(request.POST.get('team2_score'))
-		except (TypeError, ValueError):
-			messages.error(request, 'Invalid score values.')
-			return redirect('/admin/live-manage')
-		with transaction.atomic():
-			match = Match.objects.filter(id=match_id).first()
-			if not match:
-				messages.error(request, 'Match not found.')
+			match_id_raw = request.POST.get('match_id')
+			try:
+				match_id = int(match_id_raw)
+			except (TypeError, ValueError):
+				messages.error(request, 'Invalid match id.')
 				return redirect('/admin/live-manage')
-			winner = match.team1 if team1_score > team2_score else match.team2 if team2_score > team1_score else None
-			score, created = Score.objects.get_or_create(match=match)
-			if score.locked:
-				messages.error(request, 'Score is locked for this match.')
-			else:
-				score.team1_score = team1_score
-				score.team2_score = team2_score
-				score.winner = winner
-				score.locked = True
-				score.save()
-				match.status = 'completed'
-				match.save()
-				messages.success(request, 'Score confirmed.')
-		return redirect('/admin/live-manage')
+			if 'edit_score' in request.POST:
+				with transaction.atomic():
+					score = Score.objects.filter(match_id=match_id).first()
+					if not score:
+						messages.error(request, 'Score not found for this match.')
+					elif score.locked:
+						score.locked = False
+						score.save(update_fields=['locked'])
+						messages.success(request, 'Score unlocked for editing.')
+					else:
+						messages.info(request, 'Score is already editable.')
+				return redirect('/admin/live-manage')
+
+			try:
+				team1_score = int(request.POST.get('team1_score'))
+				team2_score = int(request.POST.get('team2_score'))
+			except (TypeError, ValueError):
+				messages.error(request, 'Invalid score values.')
+				return redirect('/admin/live-manage')
+			with transaction.atomic():
+				match = Match.objects.filter(id=match_id).first()
+				if not match:
+					messages.error(request, 'Match not found.')
+					return redirect('/admin/live-manage')
+				winner = match.team1 if team1_score > team2_score else match.team2 if team2_score > team1_score else None
+				score, created = Score.objects.get_or_create(match=match)
+				if score.locked:
+					messages.error(request, 'Score is locked for this match.')
+				else:
+					score.team1_score = team1_score
+					score.team2_score = team2_score
+					score.winner = winner
+					score.locked = True
+					score.save()
+					match.status = 'completed'
+					match.save()
+					messages.success(request, 'Score confirmed.')
+			return redirect('/admin/live-manage')
+		except Exception:
+			logger.exception('Admin live-manage submit failed')
+			messages.error(request, 'Unable to save score. Please retry.')
+			return redirect('/admin/live-manage')
 
 	context = {
 		'matches': matches,
