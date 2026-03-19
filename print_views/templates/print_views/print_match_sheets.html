@@ -1,33 +1,143 @@
 {% extends "base.html" %}
 {% block content %}
-<h1>Printable Match Sheets</h1>
-<table border="1" cellspacing="0" cellpadding="6">
-    <thead>
-        <tr>
-            <th>Round</th>
-            <th>Court</th>
-            <th>Team 1</th>
-            <th>Team 2</th>
-            <th>Score (T1)</th>
-            <th>Score (T2)</th>
-            <th>Referee</th>
-            <th>Notes</th>
-        </tr>
-    </thead>
-    <tbody>
-    {% for match in matches %}
-        <tr>
-            <td>{{ match.round.name }}</td>
-            <td>{% if match.court %}{{ match.court.name }}{% else %}-{% endif %}</td>
-            <td>{{ match.team1.team_name }}</td>
-            <td>{{ match.team2.team_name }}</td>
-            <td></td>
-            <td></td>
-            <td></td>
-            <td></td>
-        </tr>
-    {% endfor %}
-    </tbody>
-</table>
-<button onclick="window.print()">Print</button>
+<style>
+    @page {
+        size: A4;
+        margin: 12mm;
+    }
+    .score-sheet {
+        width: 100%;
+        max-width: 190mm;
+        margin: 0 auto 16mm auto;
+        color: #111;
+        font-family: "Inter", "Segoe UI", Arial, sans-serif;
+    }
+    .score-sheet:last-child {
+        margin-bottom: 0;
+    }
+    .score-header {
+        text-align: center;
+        line-height: 1.1;
+        margin-bottom: 10mm;
+    }
+    .score-title {
+        font-weight: 800;
+        font-size: 22pt;
+        letter-spacing: 0.5pt;
+    }
+    .score-subtitle {
+        font-weight: 700;
+        font-size: 18pt;
+        margin-top: 4pt;
+    }
+    .score-caption {
+        font-weight: 700;
+        font-size: 16pt;
+        margin-top: 6pt;
+        text-transform: uppercase;
+    }
+    .score-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12pt;
+        margin-bottom: 6mm;
+    }
+    .score-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12pt;
+    }
+    .score-table th,
+    .score-table td {
+        border: 1px solid #111;
+        padding: 6px 8px;
+        text-align: center;
+        height: 24px;
+    }
+    .score-table th {
+        font-weight: 700;
+        background: #f2f2f2;
+    }
+    .score-total {
+        font-weight: 700;
+        background: #f9f9f9;
+    }
+    .score-footer {
+        margin-top: 8mm;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12mm;
+        font-size: 12pt;
+    }
+    .line-field {
+        border-bottom: 1px solid #111;
+        height: 20px;
+        margin-top: 6px;
+    }
+    .page-break {
+        page-break-after: always;
+    }
+    @media print {
+        body { background: #fff !important; }
+        body:before { display: none !important; }
+        .liquid-glass-navbar { display: none !important; }
+        .print-actions { display: none !important; }
+        .score-sheet table, .score-sheet th, .score-sheet td {
+            color: #111 !important;
+            background: #fff !important;
+        }
+    }
+</style>
+
+<div class="print-actions" style="text-align:center;margin:20px 0;">
+    <button onclick="window.print()">Print</button>
+</div>
+
+{% for sheet in sheets %}
+<div class="score-sheet {% if not forloop.last %}page-break{% endif %}">
+    <div class="score-header">
+        <div class="score-title">NSL</div>
+        <div class="score-subtitle">2nd BADMINTON</div>
+        <div class="score-subtitle">DOUBLES TOURNAMENT</div>
+        <div class="score-caption">Score Sheet</div>
+    </div>
+    <div class="score-meta">
+        <div>Game Type: {{ sheet.points }} Points</div>
+        <div>Date: ____________</div>
+    </div>
+    <table class="score-table">
+        <thead>
+            <tr>
+                <th style="width:12%;">Point</th>
+                <th>Team 1</th>
+                <th>Team 2</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for _ in sheet.rows %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td></td>
+                <td></td>
+            </tr>
+            {% endfor %}
+            <tr class="score-total">
+                <td>Total</td>
+                <td></td>
+                <td></td>
+            </tr>
+        </tbody>
+    </table>
+    <div class="score-footer">
+        <div>
+            Winner Name
+            <div class="line-field"></div>
+        </div>
+        <div>
+            Challenger Team Name
+            <div class="line-field"></div>
+        </div>
+    </div>
+</div>
+{% endfor %}
 {% endblock %}
