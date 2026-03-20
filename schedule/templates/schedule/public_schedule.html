@@ -127,9 +127,9 @@
 
         {% if current_round %}
             <h3 class="public-round-title" style="text-align:center;">{{ current_round.name }}</h3>
-            {% for court in courts %}
+            {% for court_group in court_match_groups %}
                 <div style="width:100%;max-width:1000px;margin:0 auto 18px auto;">
-                    <h5 style="color:#fff;margin:24px 0 8px 0;text-align:left;">{{ court.name }}</h5>
+                    <h5 style="color:#fff;margin:24px 0 8px 0;text-align:left;">{{ court_group.court.name }}</h5>
                     <table class="public-table">
                         <thead>
                         <tr>
@@ -143,8 +143,7 @@
                         </tr>
                         </thead>
                         <tbody>
-                        {% for match in matches %}
-                            {% if match.round.id == current_round.id and match.court.id == court.id %}
+                        {% for match in court_group.matches %}
                             <tr>
                                 <td>{{ forloop.counter }}</td>
                                 {% if current_round.name == 'Group Stage' %}
@@ -154,7 +153,6 @@
                                 <td>{{ match.team2.team_name }}</td>
                                 <td>{{ match.status }}</td>
                             </tr>
-                            {% endif %}
                         {% endfor %}
                         </tbody>
                     </table>
