@@ -17,14 +17,23 @@
             <svg viewBox="0 0 32 32" class="print-icon"><path d="M16 6v14" stroke="white" stroke-width="2" fill="none"/><path d="M10 16l6 6 6-6" stroke="white" stroke-width="2" fill="none"/><rect x="6" y="24" width="20" height="2" rx="1" stroke="white" stroke-width="2" fill="none"/></svg>
         </a>
     </div>
+    <div style="text-align:right;font-size:0.95rem;opacity:0.8;margin:-6px 0 14px 0;">
+        Use your browser print dialog to save as PDF.
+    </div>
 
     {% for table in round_tables %}
         <div class="round-panel" data-round-panel="{{ table.round.id }}">
             <h3 class="round-panel-title">{{ table.round.name }}</h3>
             {% if table.court_groups %}
                 {% for court_group in table.court_groups %}
-                    <h4 class="court-group-title">{% if court_group.court %}{{ court_group.court.name }}{% else %}Unassigned Court{% endif %}</h4>
-                    <table class="print-table">
+                    <div class="court-group" data-court-key="{{ table.round.id }}-{{ forloop.counter }}">
+                        <div class="court-group-head">
+                            <h4 class="court-group-title">{% if court_group.court %}{{ court_group.court.name }}{% else %}Unassigned Court{% endif %}</h4>
+                            <button type="button" class="print-icon-btn print-court-btn" data-court-key="{{ table.round.id }}-{{ forloop.counter }}" title="Download" aria-label="Download">
+                                <svg viewBox="0 0 32 32" class="print-icon"><path d="M16 6v14" stroke="white" stroke-width="2" fill="none"/><path d="M10 16l6 6 6-6" stroke="white" stroke-width="2" fill="none"/><rect x="6" y="24" width="20" height="2" rx="1" stroke="white" stroke-width="2" fill="none"/></svg>
+                            </button>
+                        </div>
+                        <table class="print-table">
                         <thead>
                             <tr>
                                 <th>#</th>
@@ -47,7 +56,8 @@
                                 </tr>
                             {% endfor %}
                         </tbody>
-                    </table>
+                        </table>
+                    </div>
                 {% endfor %}
             {% else %}
                 <table class="print-table">
@@ -147,6 +157,12 @@
     font-weight: 600;
     font-size: 1.1rem;
 }
+.court-group-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
 .print-table {
     width: min(100%, 700px);
     border-collapse: collapse;
@@ -177,6 +193,12 @@
     .round-panel {
         display: block !important;
     }
+    body.print-court-only .court-group {
+        display: none;
+    }
+    body.print-court-only .court-group.print-target {
+        display: block;
+    }
 }
 </style>
 
@@ -201,6 +223,25 @@ document.addEventListener('DOMContentLoaded', function() {
         tab.addEventListener('click', () => showRound(tab.dataset.roundId));
     });
     showRound(tabs[0].dataset.roundId);
+
+    const printButtons = Array.from(document.querySelectorAll('.print-court-btn'));
+    printButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const key = btn.dataset.courtKey;
+            document.body.classList.add('print-court-only');
+            document.querySelectorAll('.court-group').forEach(group => {
+                group.classList.toggle('print-target', group.dataset.courtKey === key);
+            });
+            window.print();
+        });
+    });
+
+    window.addEventListener('afterprint', () => {
+        document.body.classList.remove('print-court-only');
+        document.querySelectorAll('.court-group').forEach(group => {
+            group.classList.remove('print-target');
+        });
+    });
 });
 </script>
 {% endblock %}
