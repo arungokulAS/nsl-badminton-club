@@ -1,12 +1,13 @@
 from io import BytesIO
 
 from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
 from openpyxl import Workbook
 from openpyxl.styles import Alignment, Border, Font, PatternFill, Side
 
 from groups.models import Group
 from matches.models import Match
-from schedule.models import Round
+from schedule.models import Court, Round
 from teams.models import Team
 
 
@@ -155,4 +156,63 @@ def download_schedule_xlsx(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
     response['Content-Disposition'] = 'attachment; filename="schedule.xlsx"'
+    return response
+
+
+def _safe_filename(value):
+    cleaned = ''.join(ch if ch.isalnum() or ch in ('-', '_') else '_' for ch in value.strip())
+    return cleaned or 'schedule'
+
+
+def download_schedule_court_xlsx(request, round_id, court_key):
+    round_obj = get_object_or_404(Round, id=round_id)
+    if court_key == 'unassigned':
+        court = None
+        court_name = 'Unassigned Court'
+        matches = Match.objects.select_related('team1', 'team2', 'court', 'group').filter(
+            round=round_obj, court__isnull=True
+        ).order_by('id')
+    else:
+        try:
+            court_id = int(court_key)
+        except (TypeError, ValueError):
+            return HttpResponse(status=404)
+        court = get_object_or_404(Court, id=court_id)
+        court_name = court.name
+        matches = Match.objects.select_related('team1', 'team2', 'court', 'group').filter(
+            round=round_obj, court=court
+        ).order_by('id')
+
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = f'{round_obj.name} - {court_name}'[:31]
+    sheet.append([round_obj.name])
+    sheet.append([f'Court: {court_name}'])
+    if round_obj.name == 'Group Stage':
+        sheet.append(['#', 'Group', 'Team 1', 'Team 2'])
+        for idx, match in enumerate(matches, start=1):
+            sheet.append([
+                idx,
+                match.group.group_name if match.group else '-',
+                match.team1.team_name if match.team1 else '-',
+                match.team2.team_name if match.team2 else '-',
+            ])
+    else:
+        sheet.append(['#', 'Team 1', 'Team 2'])
+        for idx, match in enumerate(matches, start=1):
+            sheet.append([
+                idx,
+                match.team1.team_name if match.team1 else '-',
+                match.team2.team_name if match.team2 else '-',
+            ])
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    filename = f"schedule_{_safe_filename(round_obj.name)}_{_safe_filename(court_name)}.xlsx"
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     return response

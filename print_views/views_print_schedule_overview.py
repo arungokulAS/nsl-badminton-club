@@ -27,6 +27,7 @@ def print_schedule_overview(request):
             if court_key not in court_groups:
                 court_groups[court_key] = {
                     'court': court,
+                    'court_key': court_key,
                     'matches': [],
                 }
             court_groups[court_key]['matches'].append(match)

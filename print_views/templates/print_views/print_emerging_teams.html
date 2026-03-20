@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="print-emerging-wrap">
+    <h1 class="print-emerging-title">Emerging Team</h1>
+    <div class="print-emerging-actions">
+        <button onclick="window.print()" title="Print" class="print-icon-btn" aria-label="Print">
+            <svg viewBox="0 0 32 32" class="print-icon"><rect x="6" y="10" width="20" height="12" rx="3" stroke="white" stroke-width="2" fill="none"/><rect x="10" y="6" width="12" height="6" rx="2" stroke="white" stroke-width="2" fill="none"/></svg>
+        </button>
+    </div>
+    <table class="print-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Team Name</th>
+                <th>Points Difference</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in emerging_rows %}
+                <tr>
+                    <td>{{ forloop.counter }}</td>
+                    <td>{{ row.team.team_name }}</td>
+                    <td>{{ row.points_diff }}</td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="3">No emerging teams yet.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<style>
+.print-emerging-wrap {
+    width: min(1100px, 96vw);
+    margin: 120px auto 40px auto;
+    color: #fff;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+.print-emerging-title {
+    text-align: center;
+    font-size: 2.6rem;
+    margin-bottom: 18px;
+}
+.print-emerging-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin: 0 0 18px 0;
+}
+.print-icon-btn {
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(0,0,0,0.12);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.2);
+    transition: border-color 0.2s ease, background 0.2s ease, transform 0.2s ease;
+    text-decoration: none;
+}
+.print-icon-btn:hover {
+    border-color: rgba(168,85,247,0.8);
+    background: rgba(128,0,255,0.2);
+    transform: translateY(-1px);
+}
+.print-icon {
+    width: 22px;
+    height: 22px;
+}
+.print-table {
+    width: min(100%, 760px);
+    border-collapse: collapse;
+    background: rgba(10, 10, 20, 0.4);
+    border: 1px solid rgba(128,0,255,0.35);
+    border-radius: 12px;
+    overflow: hidden;
+    margin: 0 auto 16px auto;
+}
+.print-table th,
+.print-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(128,0,255,0.2);
+}
+.print-table thead th {
+    background: rgba(128,0,255,0.18);
+    text-align: left;
+    font-weight: 600;
+}
+.print-table td {
+    text-align: left;
+}
+@media print {
+    .print-emerging-actions {
+        display: none;
+    }
+}
+</style>
+{% endblock %}

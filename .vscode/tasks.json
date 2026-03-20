@@ -4,13 +4,11 @@
 		{
 			"label": "Run Django tests for lock enforcement",
 			"type": "shell",
-			"command": "python3 manage.py test",
-			"group": "test"
-		},
-		{
-			"label": "Run Django tests for lock enforcement",
-			"type": "shell",
-			"command": "python3 manage.py test",
+			"command": "/Users/arungokul/NET SMASHERS LIVERPOOL/tournament/cloud/venv/bin/python",
+			"args": [
+				"manage.py",
+				"test"
+			],
 			"group": "test"
 		}
 	]
