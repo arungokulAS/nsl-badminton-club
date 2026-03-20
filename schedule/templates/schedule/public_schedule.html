@@ -133,6 +133,10 @@
                     <table class="public-table">
                         <thead>
                         <tr>
+                            <th>#</th>
+                            {% if current_round.name == 'Group Stage' %}
+                                <th>Group</th>
+                            {% endif %}
                             <th>Team 1</th>
                             <th>Team 2</th>
                             <th>Status</th>
@@ -142,6 +146,10 @@
                         {% for match in matches %}
                             {% if match.round.id == current_round.id and match.court.id == court.id %}
                             <tr>
+                                <td>{{ forloop.counter }}</td>
+                                {% if current_round.name == 'Group Stage' %}
+                                    <td>{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}</td>
+                                {% endif %}
                                 <td>{{ match.team1.team_name }}</td>
                                 <td>{{ match.team2.team_name }}</td>
                                 <td>{{ match.status }}</td>
