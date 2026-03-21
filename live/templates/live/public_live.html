@@ -49,12 +49,16 @@
         max-width: 1100px;
         margin: 0 auto 28px auto;
     }
+    .group-table {
+        width: 100%;
+        overflow-x: auto;
+    }
     #live-points-table {
-        max-width: 900px;
+        max-width: 1100px;
     }
     .live-table {
         width: 100%;
-        table-layout: fixed;
+        table-layout: auto;
         border-collapse: collapse;
         background: transparent;
         box-shadow: none;
@@ -78,7 +82,7 @@
     }
     .live-table th:nth-child(1),
     .live-table td:nth-child(1) {
-        width: 50%;
+        width: 40%;
     }
     .live-table th:nth-child(2),
     .live-table td:nth-child(2),
@@ -90,6 +94,11 @@
     .live-table td:nth-child(5),
     .live-table th:nth-child(6),
     .live-table td:nth-child(6) {
+        width: 10%;
+        text-align: center;
+    }
+    .live-table th:nth-child(n+7),
+    .live-table td:nth-child(n+7) {
         width: 10%;
         text-align: center;
     }
@@ -239,10 +248,12 @@
     }
     .group-slider-track {
         flex: 1;
-        overflow: hidden;
+        overflow-x: auto;
+        overflow-y: hidden;
     }
     .group-slide {
         display: none;
+        overflow-x: auto;
     }
     .group-slide.is-active {
         display: block;
