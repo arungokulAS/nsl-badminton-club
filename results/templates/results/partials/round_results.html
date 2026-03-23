@@ -2,6 +2,13 @@
 {% load static %}
 {% for round in rounds %}
     <div class="round-results" data-round-results="{{ round.id }}">
+        <div class="round-actions">
+            <div class="round-actions-title">{{ round.name }}</div>
+            <div class="round-actions-buttons">
+                <button type="button" class="round-action-btn" data-action="print-round" data-round-id="{{ round.id }}">Print</button>
+                <button type="button" class="round-action-btn" data-action="download-round" data-round-id="{{ round.id }}">Download</button>
+            </div>
+        </div>
         {% if current_round and round.id != current_round.id and not round.is_finished and 'semi' not in round.name|lower %}
             <div style="color:#fff;text-align:center;margin:12px 0;">This round has not started yet.</div>
         {% elif round.name == 'Group Stage' %}

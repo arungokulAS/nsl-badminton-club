@@ -122,6 +122,41 @@
             flex-direction: column;
             gap: 0;
         }
+        .round-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 0 12px 0;
+            padding: 8px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(128,0,255,0.2);
+            background: rgba(15, 8, 30, 0.35);
+            box-shadow: 0 0 12px rgba(120,80,255,0.15);
+        }
+        .round-actions-title {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .round-actions-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .round-action-btn {
+            padding: 6px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(168,85,247,0.6);
+            color: #fff;
+            background: linear-gradient(120deg, rgba(128,0,255,0.25), rgba(80,0,120,0.35));
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+        .round-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(120,80,255,0.35);
+        }
         @media (max-width: 980px) {
             .group-results-grid {
                 grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -326,8 +361,119 @@
                         if (selectedRoundId) {
                             setActive(selectedRoundId);
                         }
+                        bindRoundActions();
                     })
                     .catch(function() {});
+            }
+
+            function buildCsvFromSection(section) {
+                var rows = [];
+                var groupItems = section.querySelectorAll('.group-results-item');
+                if (groupItems.length) {
+                    rows.push(['Group', 'Team']);
+                    groupItems.forEach(function(item) {
+                        var title = item.querySelector('.group-results-title');
+                        var groupName = title ? title.textContent.trim() : 'Group';
+                        var teamRows = item.querySelectorAll('tbody tr');
+                        teamRows.forEach(function(tr) {
+                            var teamCell = tr.querySelector('td');
+                            if (teamCell) {
+                                rows.push([groupName, teamCell.textContent.trim()]);
+                            }
+                        });
+                    });
+                    return rows;
+                }
+
+                var tables = section.querySelectorAll('table');
+                if (tables.length) {
+                    tables.forEach(function(table) {
+                        var headerCells = table.querySelectorAll('thead th');
+                        var headers = Array.from(headerCells).map(function(th) { return th.textContent.trim(); });
+                        if (headers.length) {
+                            rows.push(headers);
+                        }
+                        var bodyRows = table.querySelectorAll('tbody tr');
+                        bodyRows.forEach(function(tr) {
+                            var cells = Array.from(tr.querySelectorAll('td')).map(function(td) {
+                                return td.textContent.trim();
+                            });
+                            if (cells.length) {
+                                rows.push(cells);
+                            }
+                        });
+                        rows.push([]);
+                    });
+                    return rows;
+                }
+
+                var highlights = section.querySelectorAll('.gold-text');
+                if (highlights.length) {
+                    rows.push(['Position', 'Team']);
+                    highlights.forEach(function(el, idx) {
+                        var label = idx === 0 ? 'Winner' : idx === 1 ? 'Runner-up' : 'Team';
+                        rows.push([label, el.textContent.trim()]);
+                    });
+                }
+                return rows;
+            }
+
+            function downloadCsv(rows, filename) {
+                var csvContent = rows.map(function(row) {
+                    return row.map(function(value) {
+                        var safe = String(value || '').replace(/"/g, '""');
+                        return '"' + safe + '"';
+                    }).join(',');
+                }).join('\n');
+                var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                var link = document.createElement('a');
+                var url = URL.createObjectURL(blob);
+                link.setAttribute('href', url);
+                link.setAttribute('download', filename);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }
+
+            function printSection(section) {
+                var clone = section.cloneNode(true);
+                var actions = clone.querySelector('.round-actions');
+                if (actions) actions.remove();
+                var printWindow = window.open('', '_blank');
+                if (!printWindow) return;
+                printWindow.document.write('<html><head><title>Round Results</title>');
+                printWindow.document.write('<style>body{font-family:Segoe UI,Arial,sans-serif;color:#111;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;} h2{margin:0 0 12px 0;}</style>');
+                printWindow.document.write('</head><body>');
+                printWindow.document.write(clone.innerHTML);
+                printWindow.document.write('</body></html>');
+                printWindow.document.close();
+                printWindow.focus();
+                printWindow.print();
+                printWindow.close();
+            }
+
+            function bindRoundActions() {
+                document.querySelectorAll('[data-action="print-round"]').forEach(function(btn) {
+                    btn.onclick = function() {
+                        var roundId = btn.getAttribute('data-round-id');
+                        var section = document.querySelector('[data-round-results="' + roundId + '"]');
+                        if (section) {
+                            printSection(section);
+                        }
+                    };
+                });
+                document.querySelectorAll('[data-action="download-round"]').forEach(function(btn) {
+                    btn.onclick = function() {
+                        var roundId = btn.getAttribute('data-round-id');
+                        var section = document.querySelector('[data-round-results="' + roundId + '"]');
+                        if (!section) return;
+                        var rows = buildCsvFromSection(section);
+                        var title = btn.closest('[data-round-results]')?.querySelector('.round-actions-title');
+                        var name = title ? title.textContent.trim().replace(/\s+/g, '_') : 'round';
+                        downloadCsv(rows, name + '_results.csv');
+                    };
+                });
             }
 
             tabs.forEach(function(tab) {
@@ -344,6 +490,8 @@
                 selectedRoundId = tabs[0].getAttribute('data-round-id');
                 setActive(selectedRoundId);
             }
+
+            bindRoundActions();
 
             refreshResults();
             refreshTimer = setInterval(refreshResults, 5000);
