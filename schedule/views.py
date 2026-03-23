@@ -101,7 +101,7 @@ def admin_schedule(request):
 		finish_round.save(update_fields=['is_finished'])
 		messages.success(request, f'{finish_round.name} finished. Next round unlocked.')
 		next_round = Round.objects.filter(order=finish_round.order + 1).first()
-		if next_round and not Match.objects.filter(round=next_round).exists():
+		if next_round:
 			from django.db import transaction
 			locked_num_courts = request.session.get('locked_num_courts')
 			courts = Court.objects.all().order_by('id')
@@ -110,6 +110,14 @@ def admin_schedule(request):
 			else:
 				courts = list(courts)
 			if finish_round.order == 1:
+				if Match.objects.filter(round=next_round).exists():
+					if Score.objects.filter(match__round=next_round, locked=True).exists():
+						messages.error(request, 'Qualifier scheduling skipped: matches already have confirmed scores.')
+						redirect_url = '/admin/schedule'
+						if next_round:
+							redirect_url = f'/admin/schedule?show_round={next_round.id}'
+						return redirect(redirect_url)
+					Match.objects.filter(round=next_round).delete()
 				from live.utils import build_group_tables
 				group_tables = build_group_tables()
 				group_rankings = {}
