@@ -439,12 +439,20 @@
             function printSection(section) {
                 var clone = section.cloneNode(true);
                 var actions = clone.querySelector('.round-actions');
-                if (actions) actions.remove();
+                var titleText = 'Results';
+                if (actions) {
+                    var titleEl = actions.querySelector('.round-actions-title');
+                    if (titleEl && titleEl.textContent.trim()) {
+                        titleText = 'Results - ' + titleEl.textContent.trim();
+                    }
+                    actions.remove();
+                }
                 var printWindow = window.open('', '_blank');
                 if (!printWindow) return;
                 printWindow.document.write('<html><head><title>Round Results</title>');
                 printWindow.document.write('<style>body{font-family:Segoe UI,Arial,sans-serif;color:#111;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;} h2{margin:0 0 12px 0;}</style>');
                 printWindow.document.write('</head><body>');
+                printWindow.document.write('<h2>' + titleText + '</h2>');
                 printWindow.document.write(clone.innerHTML);
                 printWindow.document.write('</body></html>');
                 printWindow.document.close();
