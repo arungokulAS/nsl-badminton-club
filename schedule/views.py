@@ -231,22 +231,18 @@ def admin_schedule(request):
 							)
 					messages.success(request, 'Pre-Quarter round scheduled.')
 			elif finish_round.order == 3:
-				prequarter_scores = Score.objects.select_related('match', 'winner').filter(
-					match__round=finish_round,
-					locked=True,
-				).order_by('match__id')
-				winners = []
-				for score in prequarter_scores:
-					if score.winner and score.winner not in winners:
-						winners.append(score.winner)
-				if len(winners) < 8:
-					messages.error(request, 'Quarter scheduling failed: not enough winners from Pre-Quarter.')
+				from live.utils import build_qualifier_table, build_prequarter_table
+				qualifier_table = build_qualifier_table()
+				prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
+				ranked_winners = [row['team'] for row in prequarter_table if row.get('is_prequarter_qualified')]
+				if len(ranked_winners) < 8:
+					messages.error(request, 'Quarter scheduling failed: not enough ranked winners from Pre-Quarter.')
 				elif not courts:
 					messages.error(request, 'Quarter scheduling failed: no courts available.')
 				else:
 					pairings = []
 					for idx in range(4):
-						pairings.append((winners[idx], winners[-(idx + 1)]))
+						pairings.append((ranked_winners[idx], ranked_winners[-(idx + 1)]))
 					with transaction.atomic():
 						for idx, (team1, team2) in enumerate(pairings):
 							court = courts[idx % len(courts)]

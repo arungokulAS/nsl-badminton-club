@@ -132,13 +132,13 @@ def build_qualifier_table():
     winners_ids = {row['team'].id for row in winners}
     best_losers = sorted(
         losers,
-        key=lambda row: (row['points_diff'], row['points_for'], row['team'].team_name),
+        key=lambda row: (row['points_diff'], row['points_for']),
         reverse=True,
     )[:4]
     best_loser_ids = {row['team'].id for row in best_losers}
 
     rows.sort(
-        key=lambda row: (row['total_points'], row['points_diff'], row['points_for'], row['wins'], row['team'].team_name),
+        key=lambda row: (row['total_points'], row['points_diff'], row['points_for'], row['wins']),
         reverse=True,
     )
 
