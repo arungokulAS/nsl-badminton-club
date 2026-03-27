@@ -45,6 +45,50 @@ def admin_schedule(request):
 			center = [court for court in courts_list if court.name in ('Court 3', 'Court 4', '3', '4')]
 		return center
 
+	def schedule_qualifier_round(next_round, courts):
+		from live.utils import build_group_tables
+		group_tables = build_group_tables()
+		group_rankings = {}
+		for group_table in group_tables:
+			group_name = group_table['group'].group_name
+			if group_name.lower().startswith('group '):
+				group_key = group_name.split(' ', 1)[1].strip().upper()
+			else:
+				group_key = group_name.strip().upper()
+			group_rankings[group_key] = [row['team'] for row in group_table['rows'][:4]]
+		if len(group_rankings) < 6:
+			messages.error(request, 'Qualifier scheduling failed: missing group rankings.')
+			return
+		if not courts:
+			messages.error(request, 'Qualifier scheduling failed: no courts available.')
+			return
+		pairings = [('A', 'F'), ('B', 'E'), ('C', 'D')]
+		matches = []
+		for g1, g2 in pairings:
+			teams1 = group_rankings.get(g1, [])
+			teams2 = group_rankings.get(g2, [])
+			if len(teams1) < 4 or len(teams2) < 4:
+				continue
+			matches.append((teams1[0], teams2[3]))
+			matches.append((teams1[1], teams2[2]))
+			matches.append((teams1[2], teams2[1]))
+			matches.append((teams1[3], teams2[0]))
+		if len(matches) < 12:
+			messages.error(request, 'Qualifier scheduling failed: not enough qualified teams per group.')
+			return
+		from django.db import transaction
+		with transaction.atomic():
+			for idx, (team1, team2) in enumerate(matches):
+				court = courts[idx % len(courts)]
+				Match.objects.create(
+					round=next_round,
+					team1=team1,
+					team2=team2,
+					court=court,
+					status='scheduled'
+				)
+		messages.success(request, 'Qualifier round scheduled.')
+
 	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
 	ensure_default_courts()
 	admin_password_env = os.environ.get('ADMIN_PASSWORD', 'admin123')
@@ -118,46 +162,7 @@ def admin_schedule(request):
 							redirect_url = f'/admin/schedule?show_round={next_round.id}'
 						return redirect(redirect_url)
 					Match.objects.filter(round=next_round).delete()
-				from live.utils import build_group_tables
-				group_tables = build_group_tables()
-				group_rankings = {}
-				for group_table in group_tables:
-					group_name = group_table['group'].group_name
-					if group_name.lower().startswith('group '):
-						group_key = group_name.split(' ', 1)[1].strip().upper()
-					else:
-						group_key = group_name.strip().upper()
-					group_rankings[group_key] = [row['team'] for row in group_table['rows'][:4]]
-				if len(group_rankings) < 6:
-					messages.error(request, 'Qualifier scheduling failed: missing group rankings.')
-				elif not courts:
-					messages.error(request, 'Qualifier scheduling failed: no courts available.')
-				else:
-					pairings = [('A', 'F'), ('B', 'E'), ('C', 'D')]
-					matches = []
-					for g1, g2 in pairings:
-						teams1 = group_rankings.get(g1, [])
-						teams2 = group_rankings.get(g2, [])
-						if len(teams1) < 4 or len(teams2) < 4:
-							continue
-						matches.append((teams1[0], teams2[3]))
-						matches.append((teams1[1], teams2[2]))
-						matches.append((teams1[2], teams2[1]))
-						matches.append((teams1[3], teams2[0]))
-					if len(matches) < 12:
-						messages.error(request, 'Qualifier scheduling failed: not enough qualified teams per group.')
-					else:
-						with transaction.atomic():
-							for idx, (team1, team2) in enumerate(matches):
-								court = courts[idx % len(courts)]
-								Match.objects.create(
-									round=next_round,
-									team1=team1,
-									team2=team2,
-									court=court,
-									status='scheduled'
-								)
-						messages.success(request, 'Qualifier round scheduled.')
+				schedule_qualifier_round(next_round, courts)
 			elif finish_round.order == 2:
 				qualifier_scores = Score.objects.select_related('match', 'match__team1', 'match__team2').filter(
 					match__round=finish_round,
@@ -571,37 +576,7 @@ def admin_schedule(request):
 			messages.success(request, f'Schedule generated for {next_round.name} with slot-based group/court allocation and rest enforcement.')
 		# Qualifier
 		elif next_round.order == 2:
-			# Get top 4 teams from each group
-			qualified_teams = []
-			for group in groups:
-				group_teams = list(group.teams.all())
-				# Sort by group results (score, point diff, etc.)
-				group_scores = [Score.objects.filter(match__team1=t, locked=True).first() for t in group_teams]
-				group_scores = [s for s in group_scores if s and s.winner]
-				group_scores.sort(key=lambda s: (s.team1_score + s.team2_score), reverse=True)
-				qualified_teams.extend([s.match.team1 for s in group_scores[:4]])
-			# Cross-group pairing
-			pairings = [
-				('A', 'F'), ('B', 'E'), ('C', 'D')
-			]
-			matches = []
-			for g1, g2 in pairings:
-				teams1 = [t for t in qualified_teams if t.groups.filter(group_name=g1).exists()]
-				teams2 = [t for t in qualified_teams if t.groups.filter(group_name=g2).exists()]
-				for i in range(4):
-					matches.append((teams1[i], teams2[3-i]))
-			random.shuffle(matches)
-			with transaction.atomic():
-				for idx, (team1, team2) in enumerate(matches):
-					court = courts[idx % len(courts)]
-					Match.objects.create(
-						round=next_round,
-						team1=team1,
-						team2=team2,
-						court=court,
-						status='scheduled'
-					)
-			messages.success(request, f'Qualifier round scheduled.')
+			schedule_qualifier_round(next_round, courts)
 		# Pre-Quarter
 		elif next_round.order == 3:
 			# 12 qualifier winners + 4 best losers
