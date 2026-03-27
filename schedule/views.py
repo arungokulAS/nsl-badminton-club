@@ -355,6 +355,53 @@ def admin_schedule(request):
 		schedule_qualifier_round(qualifier_round, courts)
 		return redirect(f'/admin/schedule?show_round={qualifier_round.id}')
 
+	# Regenerate quarter schedule using pre-quarter rankings
+	if request.method == 'POST' and 'regen_quarter' in request.POST:
+		admin_password = request.POST.get('admin_password')
+		if admin_password != admin_password_env:
+			messages.error(request, 'Invalid admin password.')
+			return redirect('/admin/schedule')
+		quarter_round = Round.objects.filter(name__iexact='Quarter').first()
+		if not quarter_round:
+			messages.error(request, 'Quarter round not found.')
+			return redirect('/admin/schedule')
+		if Score.objects.filter(match__round=quarter_round, locked=True).exists():
+			messages.error(request, 'Cannot regenerate: quarter matches already have confirmed scores.')
+			return redirect(f'/admin/schedule?show_round={quarter_round.id}')
+		locked_num_courts = request.session.get('locked_num_courts')
+		courts = Court.objects.all().order_by('id')
+		if locked_num_courts:
+			courts = list(courts[:locked_num_courts])
+		else:
+			courts = list(courts)
+		if not courts:
+			messages.error(request, 'Quarter regeneration failed: no courts available.')
+			return redirect(f'/admin/schedule?show_round={quarter_round.id}')
+		from live.utils import build_qualifier_table, build_prequarter_table
+		qualifier_table = build_qualifier_table()
+		prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
+		ranked_winners = [row['team'] for row in prequarter_table if row.get('is_prequarter_qualified')]
+		if len(ranked_winners) < 8:
+			messages.error(request, 'Quarter regeneration failed: not enough ranked winners from Pre-Quarter.')
+			return redirect(f'/admin/schedule?show_round={quarter_round.id}')
+		Match.objects.filter(round=quarter_round).delete()
+		pairings = []
+		for idx in range(4):
+			pairings.append((ranked_winners[idx], ranked_winners[-(idx + 1)]))
+		from django.db import transaction
+		with transaction.atomic():
+			for idx, (team1, team2) in enumerate(pairings):
+				court = courts[idx % len(courts)]
+				Match.objects.create(
+					round=quarter_round,
+					team1=team1,
+					team2=team2,
+					court=court,
+					status='scheduled'
+				)
+		messages.success(request, 'Quarter round regenerated from pre-quarter rankings.')
+		return redirect(f'/admin/schedule?show_round={quarter_round.id}')
+
 	# AJAX: If this is an AJAX POST for locking courts, return only the referee dropdown HTML
 	if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'lock_courts' in request.POST:
 		# Only handle court locking, not schedule generation
