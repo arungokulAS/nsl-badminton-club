@@ -336,6 +336,29 @@ def admin_schedule(request):
 			redirect_url = f'/admin/schedule?show_round={next_round.id}'
 		return redirect(redirect_url)
 
+	# Regenerate qualifier schedule using results
+	if request.method == 'POST' and 'regen_qualifier' in request.POST:
+		admin_password = request.POST.get('admin_password')
+		if admin_password != admin_password_env:
+			messages.error(request, 'Invalid admin password.')
+			return redirect('/admin/schedule')
+		qualifier_round = Round.objects.filter(name='Qualifier').first()
+		if not qualifier_round:
+			messages.error(request, 'Qualifier round not found.')
+			return redirect('/admin/schedule')
+		if Score.objects.filter(match__round=qualifier_round, locked=True).exists():
+			messages.error(request, 'Cannot regenerate: qualifier matches already have confirmed scores.')
+			return redirect(f'/admin/schedule?show_round={qualifier_round.id}')
+		locked_num_courts = request.session.get('locked_num_courts')
+		courts = Court.objects.all().order_by('id')
+		if locked_num_courts:
+			courts = list(courts[:locked_num_courts])
+		else:
+			courts = list(courts)
+		Match.objects.filter(round=qualifier_round).delete()
+		schedule_qualifier_round(qualifier_round, courts)
+		return redirect(f'/admin/schedule?show_round={qualifier_round.id}')
+
 	# AJAX: If this is an AJAX POST for locking courts, return only the referee dropdown HTML
 	if request.method == 'POST' and request.headers.get('x-requested-with') == 'XMLHttpRequest' and 'lock_courts' in request.POST:
 		# Only handle court locking, not schedule generation
