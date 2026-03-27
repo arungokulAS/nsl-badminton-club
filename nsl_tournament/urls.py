@@ -39,6 +39,7 @@ from print_views.views_print_referee_assignments import print_referee_assignment
 from print_views.views_print_schedule_overview import print_schedule_overview
 from print_views.views_print_emerging_teams import print_emerging_teams
 from print_views.views_print_downloads import download_group_list_xlsx, download_team_list_xlsx, download_schedule_xlsx, download_schedule_court_xlsx
+from print_views.views_print_results import print_results
 from core.views_public import public_referee, public_contact, print_menu
 
 urlpatterns = [
@@ -72,6 +73,7 @@ urlpatterns = [
     path('print/groups.xlsx', download_group_list_xlsx, name='download_group_list_xlsx'),
     path('print/referees', print_referee_assignments, name='print_referee_assignments'),
     path('print/schedule', print_schedule_overview, name='print_schedule_overview'),
+    path('print/results', print_results, name='print_results'),
     path('print/schedule.xlsx', download_schedule_xlsx, name='download_schedule_xlsx'),
     path('print/schedule/<int:round_id>/<str:court_key>.xlsx', download_schedule_court_xlsx, name='download_schedule_court_xlsx'),
     path('admin/', admin.site.urls),

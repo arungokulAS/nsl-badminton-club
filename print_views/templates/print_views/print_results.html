@@ -1,0 +1,136 @@
+{% extends "base.html" %}
+{% load results_extras %}
+{% load static %}
+{% block content %}
+<link rel="stylesheet" href="/static/gold-text.css" />
+<div style="margin-top:110px;display:flex;flex-direction:column;align-items:center;">
+    <h2 style="text-align:center;font-size:2.6rem;font-weight:800;margin-bottom:1.6rem;background:linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Print Results</h2>
+    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-bottom:18px;">
+        {% for round in rounds %}
+            <button type="button" class="round-tab" data-round-id="{{ round.id }}" style="padding:6px 12px;border-radius:16px;border:1px solid rgba(128,0,255,0.2);color:#c9a3ff;font-weight:600;background:transparent;cursor:pointer;">
+                {{ round.name }}
+            </button>
+        {% endfor %}
+    </div>
+    <style>
+        .round-tab.is-active {
+            border-color: rgba(168,85,247,0.85);
+            color: #fff;
+            box-shadow: 0 0 12px rgba(128,0,255,0.35);
+        }
+        .round-results {
+            display: none;
+            width: 100%;
+            max-width: 1000px;
+            margin: 0 auto 24px auto;
+        }
+        .round-results.is-active {
+            display: block;
+        }
+        .results-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: transparent;
+            box-shadow: none;
+            color: #fff;
+            font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+            font-size: 1.02rem;
+            margin: 0 auto 18px auto;
+            border: none;
+            border-radius: 0;
+        }
+        .results-table th,
+        .results-table td {
+            border: none !important;
+            background: transparent;
+            color: #fff;
+            padding: 0.45em 0.75em;
+            font-weight: 400;
+            text-align: left;
+            border-bottom: 1px solid rgba(255,255,255,0.12);
+        }
+        .results-table thead tr {
+            background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+        }
+        .results-table th {
+            background: transparent;
+            font-weight: 500;
+            color: #fff;
+            height: 30px;
+            font-size: 1.02rem;
+            letter-spacing: 0.01em;
+        }
+        .group-results-title {
+            margin: 0;
+            display: inline-flex;
+            align-items: center;
+            justify-content: flex-start;
+            width: fit-content;
+            padding: 6px 14px;
+            border-radius: 10px 10px 10px 0;
+            background: linear-gradient(90deg, rgba(92,40,170,0.55) 0%, rgba(92,40,170,0.45) 35%, rgba(92,40,170,0.0) 70%);
+            border: 1px solid rgba(255,255,255,0.18);
+            border-bottom: none;
+            box-shadow: 0 8px 24px 0 rgba(80,60,180,0.18), 0 0 0 1px rgba(255,255,255,0.06) inset;
+            backdrop-filter: blur(14px) saturate(1.4);
+            -webkit-backdrop-filter: blur(14px) saturate(1.4);
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            text-transform: uppercase;
+            color: #fff;
+            text-align: left;
+        }
+        .group-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 18px;
+            width: 100%;
+        }
+        .group-results-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0;
+        }
+        @media (max-width: 980px) {
+            .group-results-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+        @media (max-width: 640px) {
+            .group-results-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+
+    <div id="round-results-container">
+        {% include 'results/partials/round_results.html' %}
+    </div>
+</div>
+<script>
+    (function() {
+        var tabs = document.querySelectorAll('.round-tab');
+        var sections = document.querySelectorAll('[data-round-results]');
+        var selectedRoundId = '{{ current_round.id|default:"" }}';
+
+        function setActive(roundId) {
+            tabs.forEach(function(tab) {
+                tab.classList.toggle('is-active', tab.getAttribute('data-round-id') === roundId);
+            });
+            sections.forEach(function(section) {
+                section.classList.toggle('is-active', section.getAttribute('data-round-results') === roundId);
+            });
+        }
+
+        tabs.forEach(function(tab) {
+            tab.addEventListener('click', function() {
+                selectedRoundId = tab.getAttribute('data-round-id');
+                setActive(selectedRoundId);
+            });
+        });
+
+        if (selectedRoundId) {
+            setActive(selectedRoundId);
+        } else if (tabs.length) {
+            selectedRoundId = tabs[0].getAttribute('data-round-id');
+            setActive(selectedRoundId);
+        }
+    })();
+</script>
+{% endblock %}
