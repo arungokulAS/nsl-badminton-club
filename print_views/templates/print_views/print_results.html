@@ -27,6 +27,41 @@
         .round-results.is-active {
             display: block;
         }
+        .round-actions {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            margin: 0 0 12px 0;
+            padding: 8px 12px;
+            border-radius: 14px;
+            border: 1px solid rgba(128,0,255,0.2);
+            background: rgba(15, 8, 30, 0.35);
+            box-shadow: 0 0 12px rgba(120,80,255,0.15);
+        }
+        .round-actions-title {
+            color: #fff;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+        }
+        .round-actions-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .round-action-btn {
+            padding: 6px 14px;
+            border-radius: 12px;
+            border: 1px solid rgba(168,85,247,0.6);
+            color: #fff;
+            background: linear-gradient(120deg, rgba(128,0,255,0.25), rgba(80,0,120,0.35));
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.16s ease, box-shadow 0.16s ease;
+        }
+        .round-action-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 14px rgba(120,80,255,0.35);
+        }
         .results-table {
             width: 100%;
             border-collapse: collapse;
@@ -100,7 +135,195 @@
     </style>
 
     <div id="round-results-container">
-        {% include 'results/partials/round_results.html' %}
+        {% for round in rounds %}
+            <div class="round-results" data-round-results="{{ round.id }}">
+                <div class="round-actions">
+                    <div class="round-actions-title">{{ round.name }}</div>
+                    <div class="round-actions-buttons">
+                        <button type="button" class="round-action-btn" data-action="print-round" data-round-id="{{ round.id }}">Print</button>
+                        <button type="button" class="round-action-btn" data-action="download-round" data-round-id="{{ round.id }}">Download</button>
+                    </div>
+                </div>
+                {% if current_round and round.id != current_round.id and not round.is_finished and 'semi' not in round.name|lower %}
+                    <div style="color:#fff;text-align:center;margin:12px 0;">This round has not started yet.</div>
+                {% elif round.name == 'Group Stage' %}
+                    <div class="group-results-grid">
+                        {% for group_table in group_tables %}
+                            <div class="group-results-item">
+                                <div class="group-results-title">
+                                    {% if group_table.group.group_name|slice:":5" == "Group" %}
+                                        {{ group_table.group.group_name }}
+                                    {% else %}
+                                        Group {{ group_table.group.group_name }}
+                                    {% endif %}
+                                </div>
+                                <table class="results-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Team</th>
+                                            <th>PTS</th>
+                                            <th>Def</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for row in group_table.rows|slice:":4" %}
+                                        <tr>
+                                            <td>{{ row.team.team_name }}</td>
+                                            <td>{{ row.points }}</td>
+                                            <td>{{ row.diff }}</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% elif round.name == 'Losers Final' %}
+                    <div style="display:flex;flex-direction:column;align-items:center;margin-top:12px;">
+                        <img src="{% static 'Untitled.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:14px 0 0 0;" />
+                        <div class="gold-text" style="--gold-size:1.6rem;--gold-weight:700;letter-spacing:0.02em;text-align:center;margin-top:10px;">
+                            {% if losers_final_table and losers_final_table|length > 0 %}{{ losers_final_table.0.team.team_name }}{% else %}-{% endif %}
+                        </div>
+                        <img src="{% static 'remove-background-project.png' %}" alt="Losers Final" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 0 0;" />
+                        <div class="gold-text" style="--gold-size:1.4rem;--gold-weight:600;letter-spacing:0.02em;text-align:center;margin-top:6px;">
+                            {% if losers_final_table and losers_final_table|length > 1 %}{{ losers_final_table.1.team.team_name }}{% else %}-{% endif %}
+                        </div>
+                    </div>
+                {% elif round.name == 'Qualifier' %}
+                    <table class="results-table prequarter-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Teams</th>
+                                <th>PD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in qualifier_table|slice:":16" %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ row.team.team_name }}</td>
+                                <td>{% if row.group %}{{ row.group }}{% else %}-{% endif %}</td>
+                                <td>{{ row.points_diff }}</td>
+                                <td>{{ row.points_diff }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align:center;">No qualifier results yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% elif 'pre-quarter' in round.name|lower %}
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Teams</th>
+                                <th>PD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in prequarter_qualified %}
+                            <tr>
+                                <td>{{ row.rank }}</td>
+                                <td>{{ row.team.team_name }}</td>
+                                <td>{{ row.points_diff }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="3" style="text-align:center;">No qualified teams yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% elif round.name|lower == 'quarter' %}
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Teams</th>
+                                <th>PF</th>
+                                <th>PA</th>
+                                <th>PD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in quarter_top %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ row.team.team_name }}</td>
+                                <td>{% if quarter_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                                <td>{% if quarter_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                                <td>{% if quarter_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align:center;">No quarter point table yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% elif 'semi' in round.name|lower %}
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>Teams</th>
+                                <th>PF</th>
+                                <th>PA</th>
+                                <th>PD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in semi_qualified %}
+                            <tr>
+                                <td>{{ forloop.counter }}</td>
+                                <td>{{ row.team.team_name }}</td>
+                                <td>{% if semi_has_scores and row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                                <td>{% if semi_has_scores and row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                                <td>{% if semi_has_scores and row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="5" style="text-align:center;">No semi final point table yet.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% elif round.name == 'Final' %}
+                    <div style="display:flex;flex-direction:column;align-items:center;margin-top:-16px;">
+                        <img src="/static/pngwing.com.png" alt="Trophy" style="width:432px;height:432px;animation:trophy-bounce 1.6s infinite;filter:drop-shadow(0 0 96px #a855f7);margin-bottom:6px;" />
+                        <div class="gold-text winner-animate" style="--gold-size:2.6rem;--gold-weight:800;margin-top:4px;letter-spacing:0.02em;text-align:center;">{% if winner_team %}{{ winner_team.team_name }}{% else %}-{% endif %}</div>
+                        <img src="/static/edited-photo.png" alt="Runner-up" style="width:260px;height:auto;filter:drop-shadow(0 0 28px rgba(255,255,255,0.35));margin:12px 0 6px 0;" />
+                        <div class="gold-text" style="--gold-size:1.6rem;--gold-weight:700;letter-spacing:0.02em;text-align:center;margin-top:4px;">{% if runner_up_team %}{{ runner_up_team.team_name }}{% else %}-{% endif %}</div>
+                    </div>
+                {% else %}
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th>Teams</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for match in matches %}
+                                {% if match.round.id == round.id %}
+                                <tr>
+                                    <td>
+                                        {% if scores|get_item:match.id and scores|get_item:match.id.winner %}
+                                            {{ scores|get_item:match.id.winner.team_name }}
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% endif %}
+            </div>
+        {% endfor %}
     </div>
 </div>
 <script>
@@ -131,6 +354,126 @@
             selectedRoundId = tabs[0].getAttribute('data-round-id');
             setActive(selectedRoundId);
         }
+
+        function buildCsvFromSection(section) {
+            var rows = [];
+            var groupItems = section.querySelectorAll('.group-results-item');
+            if (groupItems.length) {
+                rows.push(['Group', 'Team']);
+                groupItems.forEach(function(item) {
+                    var title = item.querySelector('.group-results-title');
+                    var groupName = title ? title.textContent.trim() : 'Group';
+                    var teamRows = item.querySelectorAll('tbody tr');
+                    teamRows.forEach(function(tr) {
+                        var teamCell = tr.querySelector('td');
+                        if (teamCell) {
+                            rows.push([groupName, teamCell.textContent.trim()]);
+                        }
+                    });
+                });
+                return rows;
+            }
+
+            var tables = section.querySelectorAll('table');
+            if (tables.length) {
+                tables.forEach(function(table) {
+                    var headerCells = table.querySelectorAll('thead th');
+                    var headers = Array.from(headerCells).map(function(th) { return th.textContent.trim(); });
+                    if (headers.length) {
+                        rows.push(headers);
+                    }
+                    var bodyRows = table.querySelectorAll('tbody tr');
+                    bodyRows.forEach(function(tr) {
+                        var cells = Array.from(tr.querySelectorAll('td')).map(function(td) {
+                            return td.textContent.trim();
+                        });
+                        if (cells.length) {
+                            rows.push(cells);
+                        }
+                    });
+                    rows.push([]);
+                });
+                return rows;
+            }
+
+            var highlights = section.querySelectorAll('.gold-text');
+            if (highlights.length) {
+                rows.push(['Position', 'Team']);
+                highlights.forEach(function(el, idx) {
+                    var label = idx === 0 ? 'Winner' : idx === 1 ? 'Runner-up' : 'Team';
+                    rows.push([label, el.textContent.trim()]);
+                });
+            }
+            return rows;
+        }
+
+        function downloadCsv(rows, filename) {
+            var csvContent = rows.map(function(row) {
+                return row.map(function(value) {
+                    var safe = String(value || '').replace(/"/g, '""');
+                    return '"' + safe + '"';
+                }).join(',');
+            }).join('\n');
+            var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            var link = document.createElement('a');
+            var url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        function printSection(section) {
+            var clone = section.cloneNode(true);
+            var actions = clone.querySelector('.round-actions');
+            var titleText = 'Results';
+            if (actions) {
+                var titleEl = actions.querySelector('.round-actions-title');
+                if (titleEl && titleEl.textContent.trim()) {
+                    titleText = 'Results - ' + titleEl.textContent.trim();
+                }
+                actions.remove();
+            }
+            var printWindow = window.open('', '_blank');
+            if (!printWindow) return;
+            printWindow.document.write('<html><head><title>Round Results</title>');
+            printWindow.document.write('<style>body{font-family:Segoe UI,Arial,sans-serif;color:#111;padding:20px;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #ccc;padding:6px 8px;text-align:left;} h2{margin:0 0 12px 0;}</style>');
+            printWindow.document.write('</head><body>');
+            printWindow.document.write('<h2>' + titleText + '</h2>');
+            printWindow.document.write(clone.innerHTML);
+            printWindow.document.write('</body></html>');
+            printWindow.document.close();
+            printWindow.focus();
+            printWindow.print();
+            printWindow.close();
+        }
+
+        function bindRoundActions() {
+            document.querySelectorAll('[data-action="print-round"]').forEach(function(btn) {
+                btn.onclick = function() {
+                    var roundId = btn.getAttribute('data-round-id');
+                    var section = document.querySelector('[data-round-results="' + roundId + '"]');
+                    if (section) {
+                        printSection(section);
+                    }
+                };
+            });
+            document.querySelectorAll('[data-action="download-round"]').forEach(function(btn) {
+                btn.onclick = function() {
+                    var roundId = btn.getAttribute('data-round-id');
+                    var section = document.querySelector('[data-round-results="' + roundId + '"]');
+                    if (!section) return;
+                    var rows = buildCsvFromSection(section);
+                    var title = btn.closest('[data-round-results]')?.querySelector('.round-actions-title');
+                    var name = title ? title.textContent.trim().replace(/\s+/g, '_') : 'round';
+                    downloadCsv(rows, name + '_results.csv');
+                };
+            });
+        }
+
+        bindRoundActions();
     })();
 </script>
 {% endblock %}
