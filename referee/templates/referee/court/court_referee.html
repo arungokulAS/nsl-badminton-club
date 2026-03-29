@@ -82,8 +82,10 @@
                     <form method="post" class="score-entry-form">
                         {% csrf_token %}
                         <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <input type="text" name="score1" placeholder="Score {{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                        <input type="text" name="score2" placeholder="Score {{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                        {% for set_number in set_numbers %}
+                            <input type="text" name="team1_set{{ set_number }}" placeholder="Set {{ set_number }} {{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                            <input type="text" name="team2_set{{ set_number }}" placeholder="Set {{ set_number }} {{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                        {% endfor %}
                         <select name="winner" required>
                             <option value="">Select Winner</option>
                             <option value="1">{{ match.team1.team_name }}</option>

@@ -118,6 +118,39 @@ def admin_schedule(request):
 			messages.error(request, 'Invalid admin password.')
 			return redirect('/admin/schedule')
 
+	if request.method == 'POST' and 'update_round_settings' in request.POST:
+		admin_password = request.POST.get('admin_password')
+		round_id = int(request.POST.get('round_id', 0))
+		if admin_password != admin_password_env:
+			messages.error(request, 'Invalid admin password.')
+			return redirect('/admin/schedule')
+		round_obj = Round.objects.filter(id=round_id).first()
+		if not round_obj:
+			messages.error(request, 'Invalid round.')
+			return redirect('/admin/schedule')
+		try:
+			points_per_set = int(request.POST.get('points_per_set', round_obj.points_per_set))
+			sets_per_match = int(request.POST.get('sets_per_match', round_obj.sets_per_match))
+		except (TypeError, ValueError):
+			messages.error(request, 'Invalid points or sets selection.')
+			return redirect(f'/admin/schedule?show_round={round_obj.id}')
+		if points_per_set not in (15, 21, 25, 30) or sets_per_match not in (1, 2, 3):
+			messages.error(request, 'Points or sets selection is out of range.')
+			return redirect(f'/admin/schedule?show_round={round_obj.id}')
+		if not Match.objects.filter(round=round_obj).exists():
+			messages.error(request, 'Schedule must be generated before locking round settings.')
+			return redirect(f'/admin/schedule?show_round={round_obj.id}')
+		round_obj.points_per_set = points_per_set
+		round_obj.sets_per_match = sets_per_match
+		if 'lock_round_settings' in request.POST:
+			round_obj.settings_locked = True
+			messages.success(request, 'Round settings locked.')
+		elif 'unlock_round_settings' in request.POST:
+			round_obj.settings_locked = False
+			messages.success(request, 'Round settings unlocked.')
+		round_obj.save(update_fields=['points_per_set', 'sets_per_match', 'settings_locked'])
+		return redirect(f'/admin/schedule?show_round={round_obj.id}')
+
 	# Finish round action
 	if request.method == 'POST' and 'finish_round' in request.POST:
 		admin_password = request.POST.get('admin_password')

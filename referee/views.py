@@ -45,6 +45,9 @@ def admin_generate_token(request):
 		round_id = request.POST.get('round_id')
 		if not groups_locked or not locked_num_courts:
 			return HttpResponseForbidden('Courts are not locked for referee access.')
+		round_obj = Round.objects.filter(id=round_id).first()
+		if not round_obj or not round_obj.settings_locked:
+			return HttpResponseForbidden('Round settings must be locked before generating referee links.')
 		token = generate_referee_token(court_id, round_id)
 		base_url = request.build_absolute_uri('/')[:-1]
 		token_url = f"{base_url}{reverse('referee_court_page', args=[court_id])}?token={token}"
@@ -75,6 +78,10 @@ def referee_court_page(request, court_id):
 	court = get_object_or_404(Court, id=court_id)
 	round_id = token_data['round_id']
 	round_obj = get_object_or_404(Round, id=round_id)
+	if not round_obj.settings_locked:
+		return render(request, 'referee/court/invalid_token.html', {
+			'message': 'Round settings are not locked yet.',
+		}, status=403)
 	active_round = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).filter(is_finished=False).order_by('order').first()
 	if active_round and round_obj.id != active_round.id:
 		return render(request, 'referee/court/invalid_token.html', {
@@ -95,8 +102,6 @@ def referee_court_page(request, court_id):
 	if request.method == 'POST':
 		try:
 			match_id = request.POST.get('match_id')
-			score1 = request.POST.get('score1')
-			score2 = request.POST.get('score2')
 			winner = request.POST.get('winner')
 			if not match_id:
 				return HttpResponseForbidden('Match is required.')
@@ -105,11 +110,19 @@ def referee_court_page(request, court_id):
 			except (TypeError, ValueError):
 				return HttpResponseForbidden('Invalid match id.')
 			match = get_object_or_404(Match, id=match_id_int, court=court, round=round_obj)
-			try:
-				score1 = int(score1)
-				score2 = int(score2)
-			except (TypeError, ValueError):
-				return HttpResponseForbidden('Invalid score values.')
+			sets_per_match = max(1, min(round_obj.sets_per_match, 3))
+			set_values = []
+			for set_index in range(1, sets_per_match + 1):
+				team1_value = request.POST.get(f'team1_set{set_index}')
+				team2_value = request.POST.get(f'team2_set{set_index}')
+				try:
+					team1_value = int(team1_value)
+					team2_value = int(team2_value)
+				except (TypeError, ValueError):
+					return HttpResponseForbidden('Invalid score values.')
+				set_values.append((team1_value, team2_value))
+			score1 = sum(value[0] for value in set_values)
+			score2 = sum(value[1] for value in set_values)
 			if winner not in ('1', '2'):
 				return HttpResponseForbidden('Winner selection is required.')
 			if not match.team1 or not match.team2:
@@ -124,6 +137,12 @@ def referee_court_page(request, court_id):
 						defaults={
 							'team1_score': score1,
 							'team2_score': score2,
+							'team1_set1': set_values[0][0] if len(set_values) > 0 else None,
+							'team2_set1': set_values[0][1] if len(set_values) > 0 else None,
+							'team1_set2': set_values[1][0] if len(set_values) > 1 else None,
+							'team2_set2': set_values[1][1] if len(set_values) > 1 else None,
+							'team1_set3': set_values[2][0] if len(set_values) > 2 else None,
+							'team2_set3': set_values[2][1] if len(set_values) > 2 else None,
 							'winner': match.team1 if winner == '1' else match.team2,
 							'locked': False,
 						},
@@ -154,6 +173,7 @@ def referee_court_page(request, court_id):
 		'court': court,
 		'round': round_obj,
 		'matches': matches,
+		'set_numbers': list(range(1, max(1, min(round_obj.sets_per_match, 3)) + 1)),
 	}
 	return render(request, 'referee/court/court_referee.html', context)
 
@@ -197,25 +217,43 @@ def admin_live_manage(request):
 						messages.info(request, 'Score is already editable.')
 				return redirect('/admin/live-manage')
 
-			try:
-				team1_score = int(request.POST.get('team1_score'))
-				team2_score = int(request.POST.get('team2_score'))
-			except (TypeError, ValueError):
-				messages.error(request, 'Invalid score values.')
-				return redirect('/admin/live-manage')
+			winner = request.POST.get('winner')
 			with transaction.atomic():
 				match = Match.objects.filter(id=match_id).first()
 				if not match:
 					messages.error(request, 'Match not found.')
 					return redirect('/admin/live-manage')
-				winner = match.team1 if team1_score > team2_score else match.team2 if team2_score > team1_score else None
+				sets_per_match = max(1, min(match.round.sets_per_match, 3))
+				set_values = []
+				for set_index in range(1, sets_per_match + 1):
+					team1_value = request.POST.get(f'team1_set{set_index}')
+					team2_value = request.POST.get(f'team2_set{set_index}')
+					try:
+						team1_value = int(team1_value)
+						team2_value = int(team2_value)
+					except (TypeError, ValueError):
+						messages.error(request, 'Invalid score values.')
+						return redirect('/admin/live-manage')
+					set_values.append((team1_value, team2_value))
+				team1_score = sum(value[0] for value in set_values)
+				team2_score = sum(value[1] for value in set_values)
+				if winner not in ('1', '2'):
+					messages.error(request, 'Winner selection is required.')
+					return redirect('/admin/live-manage')
+				winner_obj = match.team1 if winner == '1' else match.team2
 				score, created = Score.objects.get_or_create(match=match)
 				if score.locked:
 					messages.error(request, 'Score is locked for this match.')
 				else:
 					score.team1_score = team1_score
 					score.team2_score = team2_score
-					score.winner = winner
+					score.team1_set1 = set_values[0][0] if len(set_values) > 0 else None
+					score.team2_set1 = set_values[0][1] if len(set_values) > 0 else None
+					score.team1_set2 = set_values[1][0] if len(set_values) > 1 else None
+					score.team2_set2 = set_values[1][1] if len(set_values) > 1 else None
+					score.team1_set3 = set_values[2][0] if len(set_values) > 2 else None
+					score.team2_set3 = set_values[2][1] if len(set_values) > 2 else None
+					score.winner = winner_obj
 					score.locked = True
 					score.save()
 					match.status = 'completed'

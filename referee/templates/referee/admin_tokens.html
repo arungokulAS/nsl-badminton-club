@@ -6,6 +6,7 @@
     {% if not groups_locked or not locked_num_courts %}
     <div style="color:#ff6b6b;background:rgba(128,0,255,0.10);padding:10px 18px;border-radius:8px;font-weight:500;margin-bottom:12px;">Courts must be locked before referees can be assigned.</div>
     {% endif %}
+    <div style="color:#ff6b6b;background:rgba(128,0,255,0.10);padding:10px 18px;border-radius:8px;font-weight:500;margin-bottom:12px;">Round points/sets must be locked before generating referee links.</div>
     <form method="post">
         {% csrf_token %}
         <label for="court" style="color:#fff;">Court:</label>
@@ -17,7 +18,7 @@
         <label for="round" style="color:#fff;">Round:</label>
         <select name="round_id" required style="border:1px solid rgba(128,0,255,0.2);border-radius:8px;padding:6px 10px;">
             {% for round in rounds %}
-                <option value="{{ round.id }}">{{ round.name }}</option>
+                <option value="{{ round.id }}" {% if not round.settings_locked %}disabled{% endif %}>{{ round.name }}{% if not round.settings_locked %} (unlock){% endif %}</option>
             {% endfor %}
         </select>
         <button type="submit" style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);">Generate Token</button>
