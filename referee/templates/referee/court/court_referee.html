@@ -83,14 +83,17 @@
                         {% csrf_token %}
                         <input type="hidden" name="match_id" value="{{ match.id }}">
                         {% for set_number in set_numbers %}
-                            <input type="text" name="team1_set{{ set_number }}" placeholder="Set {{ set_number }} {{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                            <input type="text" name="team2_set{{ set_number }}" placeholder="Set {{ set_number }} {{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                            <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:100%;">
+                                <div style="min-width:60px;font-weight:600;color:#cdd4ff;">Set {{ set_number }}</div>
+                                <input type="text" name="team1_set{{ set_number }}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <input type="text" name="team2_set{{ set_number }}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <select name="set_winner{{ set_number }}" required>
+                                    <option value="">Select Winner</option>
+                                    <option value="1">{{ match.team1.team_name }}</option>
+                                    <option value="2">{{ match.team2.team_name }}</option>
+                                </select>
+                            </div>
                         {% endfor %}
-                        <select name="winner" required>
-                            <option value="">Select Winner</option>
-                            <option value="1">{{ match.team1.team_name }}</option>
-                            <option value="2">{{ match.team2.team_name }}</option>
-                        </select>
                         <button type="submit">Submit</button>
                     </form>
                     {% else %}

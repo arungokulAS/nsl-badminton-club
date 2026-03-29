@@ -114,19 +114,27 @@ def referee_court_page(request, court_id):
 			match = get_object_or_404(Match, id=match_id_int, court=court, round=round_obj)
 			sets_per_match = max(1, min(round_obj.sets_per_match, 3))
 			set_values = []
+			set_winners = []
 			for set_index in range(1, sets_per_match + 1):
 				team1_value = request.POST.get(f'team1_set{set_index}')
 				team2_value = request.POST.get(f'team2_set{set_index}')
+				set_winner = request.POST.get(f'set_winner{set_index}')
 				try:
 					team1_value = int(team1_value)
 					team2_value = int(team2_value)
 				except (TypeError, ValueError):
 					return HttpResponseForbidden('Invalid score values.')
+				if set_winner not in ('1', '2'):
+					return HttpResponseForbidden('Set winner selection is required.')
 				set_values.append((team1_value, team2_value))
+				set_winners.append(set_winner)
 			score1 = sum(value[0] for value in set_values)
 			score2 = sum(value[1] for value in set_values)
-			if winner not in ('1', '2'):
-				return HttpResponseForbidden('Winner selection is required.')
+			team1_sets = sum(1 for set_winner in set_winners if set_winner == '1')
+			team2_sets = sum(1 for set_winner in set_winners if set_winner == '2')
+			if team1_sets == team2_sets:
+				return HttpResponseForbidden('Overall winner could not be determined.')
+			winner = '1' if team1_sets > team2_sets else '2'
 			if not match.team1 or not match.team2:
 				return HttpResponseForbidden('Match teams are missing.')
 			if match.status != 'scheduled':
