@@ -159,7 +159,6 @@
         <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;min-width:200px;text-align:center;">
     </div>
     <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-        <button type="submit" name="update_round_settings" value="1" style="background:linear-gradient(120deg,rgba(128,0,255,0.32) 0%,rgba(80,0,120,0.32) 100%);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;box-shadow:0 2px 12px 0 rgba(128,0,255,0.10);">Save</button>
         {% if selected_round.settings_locked %}
             <button type="submit" name="unlock_round_settings" value="1" style="background:rgba(255,107,107,0.2);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Unlock</button>
         {% else %}
