@@ -156,15 +156,17 @@
             <option value="2" {% if selected_round.sets_per_match == 2 %}selected{% endif %}>2 Sets</option>
             <option value="3" {% if selected_round.sets_per_match == 3 %}selected{% endif %}>3 Sets</option>
         </select>
-        <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;min-width:200px;text-align:center;">
-    </div>
-    <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
-        {% if selected_round.settings_locked %}
-            <button type="submit" name="unlock_round_settings" value="1" style="background:rgba(255,107,107,0.2);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Unlock</button>
-        {% else %}
-            <button type="submit" name="lock_round_settings" value="1" style="background:rgba(46,204,113,0.2);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Lock</button>
+        {% if not selected_round.settings_locked %}
+            <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;min-width:200px;text-align:center;">
         {% endif %}
     </div>
+    {% if not selected_round.settings_locked %}
+        <div style="display:flex;gap:10px;flex-wrap:wrap;justify-content:center;">
+            <button type="submit" name="lock_round_settings" value="1" style="background:rgba(46,204,113,0.2);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Lock</button>
+        </div>
+    {% else %}
+        <div style="color:#7dffb6;font-weight:600;">Settings are locked for this round.</div>
+    {% endif %}
 </form>
 <form method="post" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:36px;">
     {% csrf_token %}

@@ -118,7 +118,7 @@ def admin_schedule(request):
 			messages.error(request, 'Invalid admin password.')
 			return redirect('/admin/schedule')
 
-	if request.method == 'POST' and 'update_round_settings' in request.POST:
+	if request.method == 'POST' and ('update_round_settings' in request.POST or 'lock_round_settings' in request.POST or 'unlock_round_settings' in request.POST):
 		admin_password = request.POST.get('admin_password')
 		round_id = int(request.POST.get('round_id', 0))
 		if admin_password != admin_password_env:

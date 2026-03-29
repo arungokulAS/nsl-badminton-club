@@ -6,7 +6,9 @@
     {% if not groups_locked or not locked_num_courts %}
     <div style="color:#ff6b6b;background:rgba(128,0,255,0.10);padding:10px 18px;border-radius:8px;font-weight:500;margin-bottom:12px;">Courts must be locked before referees can be assigned.</div>
     {% endif %}
+    {% if has_unlocked_rounds %}
     <div style="color:#ff6b6b;background:rgba(128,0,255,0.10);padding:10px 18px;border-radius:8px;font-weight:500;margin-bottom:12px;">Round points/sets must be locked before generating referee links.</div>
+    {% endif %}
     <form method="post">
         {% csrf_token %}
         <label for="court" style="color:#fff;">Court:</label>
