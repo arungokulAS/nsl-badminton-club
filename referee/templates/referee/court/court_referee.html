@@ -92,9 +92,9 @@
                                     <option value="1">{{ match.team1.team_name }}</option>
                                     <option value="2">{{ match.team2.team_name }}</option>
                                 </select>
+                                <button type="submit" name="submit_set" value="{{ set_number }}" style="padding:6px 14px;">Submit Set {{ set_number }}</button>
                             </div>
                         {% endfor %}
-                        <button type="submit">Submit</button>
                     </form>
                     {% else %}
                         <span class="submitted">Score submitted, awaiting admin confirmation.</span>

@@ -41,6 +41,7 @@ def admin_generate_token(request):
 		courts = Court.objects.none()
 	rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
 	has_unlocked_rounds = rounds.filter(settings_locked=False).exists()
+	has_locked_rounds = rounds.filter(settings_locked=True).exists()
 	if request.method == 'POST':
 		court_id = request.POST.get('court_id')
 		round_id = request.POST.get('round_id')
@@ -59,6 +60,7 @@ def admin_generate_token(request):
 		'groups_locked': groups_locked,
 		'locked_num_courts': locked_num_courts,
 		'has_unlocked_rounds': has_unlocked_rounds,
+		'has_locked_rounds': has_locked_rounds,
 	})
 def referee_court_page(request, court_id):
 	token = request.GET.get('token')
