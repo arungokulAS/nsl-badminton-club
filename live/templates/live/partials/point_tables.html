@@ -59,9 +59,6 @@
                     <th>#</th>
                     <th>Team</th>
                     <th>G</th>
-                    <th>P</th>
-                    <th>W</th>
-                    <th>L</th>
                     <th>PF</th>
                     <th>PA</th>
                     <th>DIFF</th>
@@ -74,9 +71,6 @@
                     <td>{{ forloop.counter }}</td>
                     <td>{{ row.team.team_name }}</td>
                     <td>{% if row.group %}{{ row.group }}{% else %}-{% endif %}</td>
-                    <td>{{ row.played }}</td>
-                    <td>{{ row.wins }}</td>
-                    <td>{{ row.losses }}</td>
                     <td>{% if row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
                     <td>{% if row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
                     <td>{% if row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>

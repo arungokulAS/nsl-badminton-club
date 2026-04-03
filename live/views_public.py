@@ -36,7 +36,7 @@ def public_live(request):
         round=selected_round,
     ).select_related('team1', 'team2', 'court', 'round', 'score').order_by('court__id') if selected_round else Match.objects.none()
     group_tables = build_group_tables()
-    qualifier_table = build_qualifier_table()
+    qualifier_table = build_qualifier_table(selected_round) if selected_round and selected_round.name == 'Qualifier' else []
     prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
     knockout_tables = build_knockout_tables(rounds, prequarter_table)
     quarter_qualified = knockout_tables['quarter_qualified']

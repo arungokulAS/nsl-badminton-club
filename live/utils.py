@@ -73,8 +73,11 @@ def build_group_tables():
     return group_tables
 
 
-def build_qualifier_table():
-    round_obj = Round.objects.filter(name='Qualifier').first()
+def build_qualifier_table(round_obj=None):
+    if round_obj is None:
+        return []
+    if round_obj.name != 'Qualifier':
+        return []
     if not round_obj:
         return []
 

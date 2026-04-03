@@ -30,7 +30,7 @@ def public_live_api(request):
         except Exception:
             selected_round = current_round
     group_tables = build_group_tables()
-    qualifier_table = build_qualifier_table()
+    qualifier_table = build_qualifier_table(selected_round) if selected_round and selected_round.name == 'Qualifier' else []
     prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
     knockout_tables = build_knockout_tables(rounds, prequarter_table)
     quarter_qualified = knockout_tables['quarter_qualified']
