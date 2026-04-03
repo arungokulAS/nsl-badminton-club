@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin-top:120px;display:flex;justify-content:center;padding:0 14px 40px 14px;">
+    <div style="width:100%;max-width:760px;background:rgba(0,0,0,0.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(0,0,0,0.2);">
+        <h2 style="color:#fff;margin:0 0 8px 0;font-size:2rem;text-align:center;">Tournament Registration</h2>
+        <p style="color:rgba(255,255,255,0.85);text-align:center;margin:0 0 22px 0;">Register your team here. We will contact you after review.</p>
+
+        {% if success %}
+            <div style="background:rgba(46,204,113,0.18);border:1px solid rgba(46,204,113,0.45);color:#d4ffe5;padding:10px 12px;border-radius:12px;margin-bottom:14px;">
+                Registration submitted successfully.
+            </div>
+        {% endif %}
+
+        {% if error %}
+            <div style="background:rgba(255,107,107,0.18);border:1px solid rgba(255,107,107,0.45);color:#ffd6d6;padding:10px 12px;border-radius:12px;margin-bottom:14px;">
+                {{ error }}
+            </div>
+        {% endif %}
+
+        <form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+            {% csrf_token %}
+            <div style="grid-column:1 / span 2;">
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Team Name *</label>
+                <input name="team_name" required value="{{ form_data.team_name|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div>
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Player 1 Name *</label>
+                <input name="player1_name" required value="{{ form_data.player1_name|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div>
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Player 2 Name *</label>
+                <input name="player2_name" required value="{{ form_data.player2_name|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div>
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Contact Phone *</label>
+                <input name="contact_phone" required value="{{ form_data.contact_phone|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div>
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Contact Email</label>
+                <input name="contact_email" type="email" value="{{ form_data.contact_email|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div style="grid-column:1 / span 2;">
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">City</label>
+                <input name="city" value="{{ form_data.city|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
+            </div>
+            <div style="grid-column:1 / span 2;">
+                <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Notes</label>
+                <textarea name="notes" rows="4" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;">{{ form_data.notes|default:'' }}</textarea>
+            </div>
+            <div style="grid-column:1 / span 2;display:flex;justify-content:center;margin-top:6px;">
+                <button type="submit" style="border:none;border-radius:12px;padding:10px 24px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Submit Registration</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

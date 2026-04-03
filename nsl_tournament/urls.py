@@ -42,7 +42,7 @@ from print_views.views_print_schedule_overview import print_schedule_overview
 from print_views.views_print_emerging_teams import print_emerging_teams
 from print_views.views_print_downloads import download_group_list_xlsx, download_team_list_xlsx, download_schedule_xlsx, download_schedule_court_xlsx
 from print_views.views_print_results import print_results
-from core.views_public import public_referee, public_contact, print_menu
+from core.views_public import public_referee, public_contact, public_register, print_menu
 
 urlpatterns = [
     # Home page
@@ -67,6 +67,7 @@ urlpatterns = [
     path('referee', public_referee, name='public_referee'),
     path('referee/', include('referee.urls')),
     path('contact', public_contact, name='public_contact'),
+    path('register', public_register, name='public_register'),
     path('print/team', print_menu, name='print_menu'),
     path('print/bracket', print_bracket, name='print_bracket'),
     path('print/teams', print_team_list, name='print_team_list'),
