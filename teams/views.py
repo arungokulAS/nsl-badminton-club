@@ -150,8 +150,16 @@ def admin_teams(request):
 			# Clear groups and matches for consistency
 			from groups.models import Group
 			from matches.models import Match
+			from schedule.models import Round
 			Group.objects.all().delete()
 			Match.objects.all().delete()
+			Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7]).update(
+				is_finished=False,
+				settings_locked=False,
+				points_per_set=21,
+				sets_per_match=1,
+			)
+			request.session['locked_num_courts'] = None
 			messages.success(request, 'Teams unlocked. Please recreate groups and schedule.')
 		else:
 			messages.error(request, 'Invalid admin password.')

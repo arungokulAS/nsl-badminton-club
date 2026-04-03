@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.urls import reverse
 
 from core.models import TournamentRegistration
+from schedule.models import Round
 from teams.models import Team
 
 
@@ -39,3 +40,40 @@ class AdminTeamsImportFromFormsTests(TestCase):
 		team = Team.objects.first()
 		self.assertEqual(team.player1_name, 'Arun Kumar')
 		self.assertEqual(team.player2_name, 'Ravi Das')
+
+	def test_unlock_teams_resets_round_locks_and_court_lock(self):
+		Round.objects.create(
+			name='Group Stage',
+			order=1,
+			is_finished=True,
+			settings_locked=True,
+			points_per_set=30,
+			sets_per_match=3,
+		)
+		Team.objects.create(
+			player1_name='P1',
+			player2_name='P2',
+			team_name='P1 & P2',
+			is_locked=True,
+		)
+
+		session = self.client.session
+		session['locked_num_courts'] = 4
+		session.save()
+
+		response = self.client.post(
+			reverse('admin_teams'),
+			{
+				'unlock_teams': '1',
+				'admin_password': 'admin123',
+			},
+			follow=True,
+		)
+
+		self.assertEqual(response.status_code, 200)
+		round_obj = Round.objects.get(order=1)
+		self.assertFalse(round_obj.is_finished)
+		self.assertFalse(round_obj.settings_locked)
+		self.assertEqual(round_obj.points_per_set, 21)
+		self.assertEqual(round_obj.sets_per_match, 1)
+		self.assertIsNone(self.client.session.get('locked_num_courts'))
