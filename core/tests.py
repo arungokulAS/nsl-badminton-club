@@ -1,5 +1,7 @@
 from django.test import TestCase
+from django.test.utils import override_settings
 from django.urls import reverse
+from django.core import mail
 
 from core.models import TournamentRegistration
 
@@ -10,6 +12,7 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'Tournament Registration')
 
+	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
 	def test_register_submission_creates_record(self):
 		response = self.client.post(
 			reverse('public_register'),
@@ -43,6 +46,8 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(registration.emergency_contact_relation, 'Brother')
 		self.assertTrue(registration.declaration_confirmed)
 		self.assertEqual(registration.media_consent, 'agree')
+		self.assertEqual(len(mail.outbox), 1)
+		self.assertIn('NSL Badminton Tournament Registration', mail.outbox[0].subject)
 
 	def test_admin_registered_teams_requires_admin_session(self):
 		response = self.client.get(reverse('admin_registered_teams'))

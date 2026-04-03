@@ -1,5 +1,27 @@
 {% extends "base.html" %}
 {% block content %}
+<style>
+    .register-form-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 14px;
+    }
+    .register-form-grid input,
+    .register-form-grid select,
+    .register-form-grid textarea {
+        width: 100%;
+        box-sizing: border-box;
+        min-width: 0;
+    }
+    @media (max-width: 740px) {
+        .register-form-grid {
+            grid-template-columns: 1fr;
+        }
+        .register-full-width {
+            grid-column: 1 !important;
+        }
+    }
+</style>
 <div style="margin-top:120px;display:flex;justify-content:center;padding:0 14px 40px 14px;">
     <div style="width:100%;max-width:760px;background:rgba(0,0,0,0.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(0,0,0,0.2);">
         <h2 style="color:#fff;margin:0 0 8px 0;font-size:2rem;text-align:center;">Tournament Registration</h2>
@@ -17,9 +39,9 @@
             </div>
         {% endif %}
 
-        <form method="post" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;">
+        <form method="post" class="register-form-grid">
             {% csrf_token %}
-            <div style="grid-column:1 / span 2;">
+            <div class="register-full-width" style="grid-column:1 / span 2;">
                 <h3 style="color:#fff;margin:0 0 4px 0;">Player 1</h3>
             </div>
             <div>
@@ -52,7 +74,7 @@
                 <input name="player1_city" required value="{{ form_data.player1_city|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
             </div>
 
-            <div style="grid-column:1 / span 2;margin-top:8px;">
+            <div class="register-full-width" style="grid-column:1 / span 2;margin-top:8px;">
                 <h3 style="color:#fff;margin:0 0 4px 0;">Player 2</h3>
             </div>
             <div>
@@ -85,7 +107,7 @@
                 <input name="player2_city" required value="{{ form_data.player2_city|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
             </div>
 
-            <div style="grid-column:1 / span 2;">
+            <div class="register-full-width" style="grid-column:1 / span 2;">
                 <h3 style="color:#fff;margin:8px 0 4px 0;">Emergency Contact</h3>
             </div>
             <div>
@@ -96,7 +118,7 @@
                 <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Contact No. *</label>
                 <input name="emergency_contact_number" required value="{{ form_data.emergency_contact_number|default:'' }}" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;" />
             </div>
-            <div style="grid-column:1 / span 2;">
+            <div class="register-full-width" style="grid-column:1 / span 2;">
                 <label style="display:block;color:#fff;font-weight:600;margin-bottom:5px;">Relation *</label>
                 <select name="emergency_contact_relation" required style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,0.26);background:rgba(255,255,255,0.08);color:#fff;">
                     <option value="">Select</option>
@@ -106,7 +128,7 @@
                 </select>
             </div>
 
-            <div style="grid-column:1 / span 2;margin-top:8px;">
+            <div class="register-full-width" style="grid-column:1 / span 2;margin-top:8px;">
                 <h3 style="color:#fff;margin:0 0 8px 0;">Declaration</h3>
                 <label style="display:flex;align-items:flex-start;gap:8px;color:#fff;line-height:1.4;">
                     <input type="checkbox" name="declaration_confirmed" {% if form_data.declaration_confirmed %}checked{% endif %} style="margin-top:3px;" required />
@@ -114,7 +136,7 @@
                 </label>
             </div>
 
-            <div style="grid-column:1 / span 2;">
+            <div class="register-full-width" style="grid-column:1 / span 2;">
                 <h3 style="color:#fff;margin:8px 0 8px 0;">Consent for Photos &amp; Videos</h3>
                 {% for consent_value, consent_label in media_consents %}
                     <label style="display:flex;align-items:center;gap:8px;color:#fff;margin-bottom:6px;">
@@ -124,7 +146,7 @@
                 {% endfor %}
             </div>
 
-            <div style="grid-column:1 / span 2;display:flex;justify-content:center;margin-top:6px;">
+            <div class="register-full-width" style="grid-column:1 / span 2;display:flex;justify-content:center;margin-top:6px;">
                 <button type="submit" style="border:none;border-radius:12px;padding:10px 24px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Submit Registration</button>
             </div>
         </form>
