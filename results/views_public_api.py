@@ -25,7 +25,8 @@ def public_results_api(request):
             round_has_scores[match.round_id] = True
     current_round = rounds.filter(is_finished=False).first() if rounds.exists() else None
     group_tables = build_group_tables()
-    qualifier_table = build_qualifier_table()
+    qualifier_round = rounds.filter(name='Qualifier').first()
+    qualifier_table = build_qualifier_table(qualifier_round) if qualifier_round else []
     prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
     knockout_tables = build_knockout_tables(rounds, prequarter_table)
     quarter_qualified = knockout_tables['quarter_qualified']

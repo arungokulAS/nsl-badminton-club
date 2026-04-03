@@ -53,7 +53,11 @@
                     <tr>
                         <th>#</th>
                         <th>Teams</th>
+                        <th>G</th>
+                        <th>PF</th>
+                        <th>PA</th>
                         <th>PD</th>
+                        <th>TP</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -62,12 +66,14 @@
                         <td>{{ forloop.counter }}</td>
                         <td>{{ row.team.team_name }}</td>
                         <td>{% if row.group %}{{ row.group }}{% else %}-{% endif %}</td>
-                        <td>{{ row.points_diff }}</td>
-                        <td>{{ row.points_diff }}</td>
+                        <td>{% if row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                        <td>{% if row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                        <td>{% if row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
+                        <td>{{ row.total_points }}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="5" style="text-align:center;">No qualifier results yet.</td>
+                        <td colspan="7" style="text-align:center;">No qualifier results yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -78,19 +84,23 @@
                     <tr>
                         <th>#</th>
                         <th>Teams</th>
+                        <th>PF</th>
+                        <th>PA</th>
                         <th>PD</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in prequarter_qualified %}
+                    {% for row in prequarter_table %}
                     <tr>
                         <td>{{ row.rank }}</td>
                         <td>{{ row.team.team_name }}</td>
-                        <td>{{ row.points_diff }}</td>
+                        <td>{% if row.points_for is not None %}{{ row.points_for }}{% else %}-{% endif %}</td>
+                        <td>{% if row.points_against is not None %}{{ row.points_against }}{% else %}-{% endif %}</td>
+                        <td>{% if row.points_diff is not None %}{{ row.points_diff }}{% else %}-{% endif %}</td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="3" style="text-align:center;">No qualified teams yet.</td>
+                        <td colspan="5" style="text-align:center;">No qualified teams yet.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -107,7 +117,7 @@
                     </tr>
                 </thead>
                 <tbody>
-                    {% for row in quarter_top %}
+                    {% for row in quarter_qualified %}
                     <tr>
                         <td>{{ forloop.counter }}</td>
                         <td>{{ row.team.team_name }}</td>
