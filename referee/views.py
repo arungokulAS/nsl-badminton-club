@@ -260,6 +260,17 @@ def admin_live_manage(request):
 		matches = matches.filter(round=current_round)
 	scores = {s.match_id: s for s in Score.objects.all()}
 
+	def _set_field_names(set_number):
+		return (
+			f'team1_set{set_number}',
+			f'team2_set{set_number}',
+			f'set{set_number}_submitted',
+		)
+
+	def _recalculate_totals(score):
+		score.team1_score = (score.team1_set1 or 0) + (score.team1_set2 or 0) + (score.team1_set3 or 0)
+		score.team2_score = (score.team2_set1 or 0) + (score.team2_set2 or 0) + (score.team2_set3 or 0)
+
 	if request.method == 'POST':
 		try:
 			match_id_raw = request.POST.get('match_id')
@@ -268,7 +279,11 @@ def admin_live_manage(request):
 			except (TypeError, ValueError):
 				messages.error(request, 'Invalid match id.')
 				return redirect('/admin/live-manage')
-			if 'edit_score' in request.POST:
+			action = request.POST.get('action')
+			if not action and 'edit_score' in request.POST:
+				action = 'edit_score'
+
+			if action == 'edit_score':
 				with transaction.atomic():
 					score = Score.objects.filter(match_id=match_id).first()
 					if not score:
@@ -276,54 +291,119 @@ def admin_live_manage(request):
 					elif score.locked:
 						score.locked = False
 						score.save(update_fields=['locked'])
+						match = Match.objects.filter(id=match_id).first()
+						if match and match.status == 'completed':
+							match.status = 'awaiting_admin_confirmation'
+							match.save(update_fields=['status'])
 						messages.success(request, 'Score unlocked for editing.')
 					else:
 						messages.info(request, 'Score is already editable.')
 				return redirect('/admin/live-manage')
 
-			winner = request.POST.get('winner')
 			with transaction.atomic():
-				match = Match.objects.filter(id=match_id).first()
+				match = Match.objects.filter(id=match_id).select_related('team1', 'team2', 'round').first()
 				if not match:
 					messages.error(request, 'Match not found.')
 					return redirect('/admin/live-manage')
 				sets_per_match = max(1, min(match.round.sets_per_match, 3))
-				set_values = []
-				for set_index in range(1, sets_per_match + 1):
-					team1_value = request.POST.get(f'team1_set{set_index}')
-					team2_value = request.POST.get(f'team2_set{set_index}')
+
+				if action == 'save_set':
+					set_number_raw = request.POST.get('set_number')
+					team1_value_raw = request.POST.get('team1_value')
+					team2_value_raw = request.POST.get('team2_value')
 					try:
-						team1_value = int(team1_value)
-						team2_value = int(team2_value)
+						set_number = int(set_number_raw)
+						team1_value = int(team1_value_raw)
+						team2_value = int(team2_value_raw)
 					except (TypeError, ValueError):
-						messages.error(request, 'Invalid score values.')
+						messages.error(request, 'Invalid set score values.')
 						return redirect('/admin/live-manage')
-					set_values.append((team1_value, team2_value))
-				team1_score = sum(value[0] for value in set_values)
-				team2_score = sum(value[1] for value in set_values)
-				if winner not in ('1', '2'):
-					messages.error(request, 'Winner selection is required.')
+					if set_number < 1 or set_number > sets_per_match:
+						messages.error(request, 'Invalid set number.')
+						return redirect('/admin/live-manage')
+					if team1_value == team2_value:
+						messages.error(request, 'Set score cannot be tied.')
+						return redirect('/admin/live-manage')
+					score, _ = Score.objects.get_or_create(
+						match=match,
+						defaults={
+							'team1_score': 0,
+							'team2_score': 0,
+							'locked': False,
+						},
+					)
+					if score.locked:
+						messages.error(request, 'Score is locked. Click edit before saving changes.')
+						return redirect('/admin/live-manage')
+					team1_field, team2_field, submitted_field = _set_field_names(set_number)
+					setattr(score, team1_field, team1_value)
+					setattr(score, team2_field, team2_value)
+					setattr(score, submitted_field, True)
+					score.winner = None
+					_recalculate_totals(score)
+					score.save()
+					if match.status == 'scheduled':
+						match.status = 'awaiting_admin_confirmation'
+						match.save(update_fields=['status'])
+					messages.success(request, f'Set {set_number} saved.')
 					return redirect('/admin/live-manage')
-				winner_obj = match.team1 if winner == '1' else match.team2
-				score, created = Score.objects.get_or_create(match=match)
-				if score.locked:
-					messages.error(request, 'Score is locked for this match.')
-				else:
-					score.team1_score = team1_score
-					score.team2_score = team2_score
-					score.team1_set1 = set_values[0][0] if len(set_values) > 0 else None
-					score.team2_set1 = set_values[0][1] if len(set_values) > 0 else None
-					score.team1_set2 = set_values[1][0] if len(set_values) > 1 else None
-					score.team2_set2 = set_values[1][1] if len(set_values) > 1 else None
-					score.team1_set3 = set_values[2][0] if len(set_values) > 2 else None
-					score.team2_set3 = set_values[2][1] if len(set_values) > 2 else None
-					score.winner = winner_obj
+
+				if action == 'edit_set':
+					set_number_raw = request.POST.get('set_number')
+					try:
+						set_number = int(set_number_raw)
+					except (TypeError, ValueError):
+						messages.error(request, 'Invalid set number.')
+						return redirect('/admin/live-manage')
+					if set_number < 1 or set_number > sets_per_match:
+						messages.error(request, 'Invalid set number.')
+						return redirect('/admin/live-manage')
+					score = Score.objects.filter(match=match).first()
+					if not score:
+						messages.error(request, 'Score not found for this match.')
+						return redirect('/admin/live-manage')
+					team1_field, team2_field, submitted_field = _set_field_names(set_number)
+					setattr(score, team1_field, None)
+					setattr(score, team2_field, None)
+					setattr(score, submitted_field, False)
+					score.winner = None
+					score.locked = False
+					_recalculate_totals(score)
+					score.save()
+					if match.status == 'completed':
+						match.status = 'awaiting_admin_confirmation'
+						match.save(update_fields=['status'])
+					messages.success(request, f'Set {set_number} opened for editing.')
+					return redirect('/admin/live-manage')
+
+				if action == 'save_winner':
+					winner = request.POST.get('winner')
+					if winner not in ('1', '2'):
+						messages.error(request, 'Winner selection is required.')
+						return redirect('/admin/live-manage')
+					score = Score.objects.filter(match=match).first()
+					if not score:
+						messages.error(request, 'Please save set scores before selecting winner.')
+						return redirect('/admin/live-manage')
+					required_submissions = [score.set1_submitted]
+					if sets_per_match >= 2:
+						required_submissions.append(score.set2_submitted)
+					if sets_per_match >= 3:
+						required_submissions.append(score.set3_submitted)
+					if not all(required_submissions):
+						messages.error(request, 'Please save all set scores before finalizing winner.')
+						return redirect('/admin/live-manage')
+					score.winner = match.team1 if winner == '1' else match.team2
 					score.locked = True
+					_recalculate_totals(score)
 					score.save()
 					match.status = 'completed'
-					match.save()
-					messages.success(request, 'Score confirmed.')
-			return redirect('/admin/live-manage')
+					match.save(update_fields=['status'])
+					messages.success(request, 'Winner saved and published to public pages.')
+					return redirect('/admin/live-manage')
+
+				messages.error(request, 'Invalid action.')
+				return redirect('/admin/live-manage')
 		except Exception:
 			logger.exception('Admin live-manage submit failed')
 			messages.error(request, 'Unable to save score. Please retry.')
