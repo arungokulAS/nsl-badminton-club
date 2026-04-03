@@ -82,19 +82,34 @@
                     <form method="post" class="score-entry-form">
                         {% csrf_token %}
                         <input type="hidden" name="match_id" value="{{ match.id }}">
-                        {% for set_number in set_numbers %}
+                        {% if match.partial_score %}
+                            <div style="width:100%;font-size:0.95rem;color:#cdd4ff;margin-bottom:8px;">
+                                {% if match.partial_score.set1_submitted %}
+                                    <span style="margin-right:14px;">Set 1: {{ match.partial_score.team1_set1 }} - {{ match.partial_score.team2_set1 }}</span>
+                                {% endif %}
+                                {% if match.partial_score.set2_submitted %}
+                                    <span style="margin-right:14px;">Set 2: {{ match.partial_score.team1_set2 }} - {{ match.partial_score.team2_set2 }}</span>
+                                {% endif %}
+                                {% if match.partial_score.set3_submitted %}
+                                    <span>Set 3: {{ match.partial_score.team1_set3 }} - {{ match.partial_score.team2_set3 }}</span>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if match.next_set_number %}
                             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:100%;">
-                                <div style="min-width:60px;font-weight:600;color:#cdd4ff;">Set {{ set_number }}</div>
-                                <input type="text" name="team1_set{{ set_number }}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                                <input type="text" name="team2_set{{ set_number }}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                                <select name="set_winner{{ set_number }}" required>
+                                <div style="min-width:60px;font-weight:600;color:#cdd4ff;">Set {{ match.next_set_number }}</div>
+                                <input type="text" name="team1_set{{ match.next_set_number }}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <input type="text" name="team2_set{{ match.next_set_number }}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <select name="set_winner{{ match.next_set_number }}" required>
                                     <option value="">Select Winner</option>
                                     <option value="1">{{ match.team1.team_name }}</option>
                                     <option value="2">{{ match.team2.team_name }}</option>
                                 </select>
-                                <button type="submit" name="submit_set" value="{{ set_number }}" style="padding:6px 14px;">Submit Set {{ set_number }}</button>
+                                <button type="submit" name="submit_set" value="{{ match.next_set_number }}" style="padding:6px 14px;">Submit Set {{ match.next_set_number }}</button>
                             </div>
-                        {% endfor %}
+                        {% else %}
+                            <span class="submitted">All sets submitted, awaiting admin confirmation.</span>
+                        {% endif %}
                     </form>
                     {% else %}
                         <span class="submitted">Score submitted, awaiting admin confirmation.</span>

@@ -96,90 +96,142 @@ def referee_court_page(request, court_id):
 			'message': 'Referee token expired for this round.',
 		}, status=403)
 
-	# Only show matches for this court, this round, and not already submitted
+	# Show matches for this court/round that are still being scored by referee
 	matches = Match.objects.filter(
 		court=court,
 		round=round_obj,
-		score__isnull=True,
+		status='scheduled',
 	).order_by('id')
+	score_map = {score.match_id: score for score in Score.objects.filter(match__in=matches)}
+
+	def _next_set_number(score_obj, sets_per_match):
+		if not score_obj or not score_obj.set1_submitted:
+			return 1
+		if sets_per_match >= 2 and not score_obj.set2_submitted:
+			return 2
+		if sets_per_match >= 3 and not score_obj.set3_submitted:
+			return 3
+		return None
+
+	def _set_field_names(set_number):
+		return (
+			f'team1_set{set_number}',
+			f'team2_set{set_number}',
+			f'set{set_number}_submitted',
+		)
 
 	if request.method == 'POST':
 		try:
 			match_id = request.POST.get('match_id')
-			winner = request.POST.get('winner')
+			submit_set_raw = request.POST.get('submit_set')
 			if not match_id:
 				return HttpResponseForbidden('Match is required.')
 			try:
 				match_id_int = int(match_id)
 			except (TypeError, ValueError):
 				return HttpResponseForbidden('Invalid match id.')
+			try:
+				submit_set = int(submit_set_raw)
+			except (TypeError, ValueError):
+				return HttpResponseForbidden('Invalid set submission.')
 			match = get_object_or_404(Match, id=match_id_int, court=court, round=round_obj)
 			sets_per_match = max(1, min(round_obj.sets_per_match, 3))
-			set_values = []
-			set_winners = []
-			for set_index in range(1, sets_per_match + 1):
-				team1_value = request.POST.get(f'team1_set{set_index}')
-				team2_value = request.POST.get(f'team2_set{set_index}')
-				set_winner = request.POST.get(f'set_winner{set_index}')
-				try:
-					team1_value = int(team1_value)
-					team2_value = int(team2_value)
-				except (TypeError, ValueError):
-					return HttpResponseForbidden('Invalid score values.')
-				if set_winner not in ('1', '2'):
-					return HttpResponseForbidden('Set winner selection is required.')
-				set_values.append((team1_value, team2_value))
-				set_winners.append(set_winner)
-			score1 = sum(value[0] for value in set_values)
-			score2 = sum(value[1] for value in set_values)
-			team1_sets = sum(1 for set_winner in set_winners if set_winner == '1')
-			team2_sets = sum(1 for set_winner in set_winners if set_winner == '2')
-			if team1_sets == team2_sets:
-				return HttpResponseForbidden('Overall winner could not be determined.')
-			winner = '1' if team1_sets > team2_sets else '2'
+			if submit_set < 1 or submit_set > sets_per_match:
+				return HttpResponseForbidden('Set number is out of range.')
+			team1_value_raw = request.POST.get(f'team1_set{submit_set}')
+			team2_value_raw = request.POST.get(f'team2_set{submit_set}')
+			set_winner = request.POST.get(f'set_winner{submit_set}')
+			try:
+				team1_value = int(team1_value_raw)
+				team2_value = int(team2_value_raw)
+			except (TypeError, ValueError):
+				return HttpResponseForbidden('Invalid score values.')
+			if set_winner not in ('1', '2'):
+				return HttpResponseForbidden('Set winner selection is required.')
+			if team1_value == team2_value:
+				return HttpResponseForbidden('Set score cannot be tied.')
+			expected_winner = '1' if team1_value > team2_value else '2'
+			if set_winner != expected_winner:
+				return HttpResponseForbidden('Set winner does not match entered score.')
 			if not match.team1 or not match.team2:
 				return HttpResponseForbidden('Match teams are missing.')
 			if match.status != 'scheduled':
 				return HttpResponseForbidden('Match is not available for scoring.')
-			# Save score as awaiting admin confirmation (handle concurrent submissions safely)
-			try:
-				with transaction.atomic():
-					score, created = Score.objects.get_or_create(
-						match=match,
-						defaults={
-							'team1_score': score1,
-							'team2_score': score2,
-							'team1_set1': set_values[0][0] if len(set_values) > 0 else None,
-							'team2_set1': set_values[0][1] if len(set_values) > 0 else None,
-							'team1_set2': set_values[1][0] if len(set_values) > 1 else None,
-							'team2_set2': set_values[1][1] if len(set_values) > 1 else None,
-							'team1_set3': set_values[2][0] if len(set_values) > 2 else None,
-							'team2_set3': set_values[2][1] if len(set_values) > 2 else None,
-							'winner': match.team1 if winner == '1' else match.team2,
-							'locked': False,
-						},
-					)
-					if not created:
-						return HttpResponseForbidden('Score already submitted for this match.')
+			with transaction.atomic():
+				score, _ = Score.objects.get_or_create(
+					match=match,
+					defaults={
+						'team1_score': 0,
+						'team2_score': 0,
+						'locked': False,
+					},
+				)
+				if score.locked:
+					return HttpResponseForbidden('Score is already admin-confirmed.')
+				next_set = _next_set_number(score, sets_per_match)
+				if next_set is None:
+					return HttpResponseForbidden('All sets are already submitted.')
+				if submit_set != next_set:
+					return HttpResponseForbidden(f'Please submit Set {next_set} next.')
+
+				team1_field, team2_field, submitted_field = _set_field_names(submit_set)
+				setattr(score, team1_field, team1_value)
+				setattr(score, team2_field, team2_value)
+				setattr(score, submitted_field, True)
+
+				score.team1_score = (score.team1_set1 or 0) + (score.team1_set2 or 0) + (score.team1_set3 or 0)
+				score.team2_score = (score.team2_set1 or 0) + (score.team2_set2 or 0) + (score.team2_set3 or 0)
+
+				all_submitted = (
+					score.set1_submitted and
+					(sets_per_match < 2 or score.set2_submitted) and
+					(sets_per_match < 3 or score.set3_submitted)
+				)
+				if all_submitted:
+					team1_sets = 0
+					team2_sets = 0
+					set_pairs = [
+						(score.team1_set1, score.team2_set1),
+						(score.team1_set2, score.team2_set2),
+						(score.team1_set3, score.team2_set3),
+					]
+					for index in range(sets_per_match):
+						team1_set_score, team2_set_score = set_pairs[index]
+						if team1_set_score is None or team2_set_score is None:
+							return HttpResponseForbidden('Missing set scores.')
+						if team1_set_score == team2_set_score:
+							return HttpResponseForbidden('Set score cannot be tied.')
+						if team1_set_score > team2_set_score:
+							team1_sets += 1
+						else:
+							team2_sets += 1
+					if team1_sets == team2_sets:
+						return HttpResponseForbidden('Overall winner could not be determined.')
+					score.winner = match.team1 if team1_sets > team2_sets else match.team2
 					match.status = 'awaiting_admin_confirmation'
 					match.save(update_fields=['status'])
-			except IntegrityError:
-				return HttpResponseForbidden('Score already submitted for this match.')
+				score.save()
 			logger.info(
-				"Referee submission: match=%s court=%s round=%s team1=%s team2=%s score1=%s score2=%s winner=%s",
+				"Referee set submission: match=%s court=%s round=%s set=%s team1=%s team2=%s score1=%s score2=%s",
 				match.id,
 				court.id,
 				round_obj.id,
+				submit_set,
 				match.team1_id,
 				match.team2_id,
-				score1,
-				score2,
-				match.team1_id if winner == '1' else match.team2_id,
+				team1_value,
+				team2_value,
 			)
 			return redirect(request.path + f'?token={token}')
 		except Exception:
 			logger.exception("Referee submission failed")
 			return HttpResponseForbidden('Unable to submit score. Please retry.')
+
+	for match in matches:
+		score = score_map.get(match.id)
+		sets_per_match = max(1, min(round_obj.sets_per_match, 3))
+		match.partial_score = score
+		match.next_set_number = _next_set_number(score, sets_per_match)
 
 	context = {
 		'court': court,
