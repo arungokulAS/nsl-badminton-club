@@ -40,13 +40,17 @@ def admin_groups(request):
 				from django.db import transaction
 				with transaction.atomic():
 					team = Team.objects.get(id=move_team_id)
+					current_group = Group.objects.filter(teams=team).first()
+					target_group = Group.objects.get(id=target_group_id)
+					if current_group and current_group.id == target_group.id:
+						messages.info(request, f'{team.team_name} is already in Group {target_group.group_name}.')
+						return redirect('/admin/groups')
 					# Remove from all groups
 					for group in Group.objects.filter(teams=team):
 						group.teams.remove(team)
 					# Add to target group
-					target_group = Group.objects.get(id=target_group_id)
 					target_group.teams.add(team)
-				messages.success(request, 'Team moved successfully.')
+				messages.success(request, f'{team.team_name} moved to Group {target_group.group_name}.')
 			except Exception as e:
 				messages.error(request, f'Error moving team: {e}')
 		else:
