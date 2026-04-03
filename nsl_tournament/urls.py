@@ -31,6 +31,8 @@ from teams.views_public import public_teams
 from groups.views_public import public_groups
 from live.views_public import public_live
 from live.views_public_api import public_live_api
+from live.views_emerging import public_emerging_live
+from results.views_emerging import public_emerging_results
 from print_views.views_print import print_bracket
 from print_views.views_print_team_list import print_team_list
 from print_views.views_print_match_sheets import print_match_sheets
@@ -60,6 +62,8 @@ urlpatterns = [
     path('tournament/groups', public_groups, name='public_groups'),
     path('tournament/live', public_live, name='public_live'),
     path('tournament/live/api', public_live_api, name='public_live_api'),
+    path('emerging/live', public_emerging_live, name='public_emerging_live'),
+    path('emerging/results', public_emerging_results, name='public_emerging_results'),
     path('referee', public_referee, name='public_referee'),
     path('referee/', include('referee.urls')),
     path('contact', public_contact, name='public_contact'),

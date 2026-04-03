@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+{% load results_extras %}
+{% block content %}
+<div style="margin-top:110px;max-width:1100px;margin-left:auto;margin-right:auto;color:#fff;">
+    <h2 style="text-align:center;font-size:2.4rem;font-weight:800;margin-bottom:1.2rem;background:linear-gradient(to bottom, rgba(168,85,247,0.95) 0%, rgba(139,92,246,0.85) 60%, rgba(88,28,135,0.45) 85%, rgba(255,255,255,0.0) 100%);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Emerging Event Results</h2>
+
+    {% if champion %}
+    <div style="text-align:center;margin-bottom:18px;font-size:1.2rem;">
+        Champion: <strong>{{ champion.team_name }}</strong>
+    </div>
+    {% endif %}
+
+    {% for round in rounds %}
+        <div style="margin-bottom:20px;">
+            <h3>{{ round.name }}</h3>
+            <table style="width:100%;border-collapse:collapse;">
+                <thead>
+                <tr style="background:rgba(128,0,255,0.22);">
+                    <th style="padding:10px;text-align:left;">#</th>
+                    <th style="padding:10px;text-align:left;">Team 1</th>
+                    <th style="padding:10px;text-align:left;">Team 2</th>
+                    <th style="padding:10px;text-align:left;">Winner</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for match in matches %}
+                    {% if match.round_id == round.id %}
+                    {% with score=scores|get_item:match.id %}
+                    <tr style="border-bottom:1px solid rgba(255,255,255,0.1);">
+                        <td style="padding:10px;">{{ forloop.counter }}</td>
+                        <td style="padding:10px;">{{ match.team1.team_name }}</td>
+                        <td style="padding:10px;">{{ match.team2.team_name }}</td>
+                        <td style="padding:10px;">{% if score and score.winner %}{{ score.winner.team_name }}{% else %}-{% endif %}</td>
+                    </tr>
+                    {% endwith %}
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% empty %}
+        <div style="text-align:center;opacity:0.85;">Emerging rounds are not generated yet.</div>
+    {% endfor %}
+</div>
+{% endblock %}
