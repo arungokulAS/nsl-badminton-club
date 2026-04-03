@@ -287,6 +287,12 @@
         {% csrf_token %}
         <button type="submit" name="clear_all" onclick="return confirm('Are you sure you want to clear all teams?');" class="neon-icon-btn glass-btn" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 84px; min-height: 32px; letter-spacing: 0.01em; text-align: center; user-select: none; overflow: hidden;">Clear All</button>
     </form>
+
+    <!-- Import From Forms Button -->
+    <form method="post" style="margin-bottom:24px;text-align:right;">
+        {% csrf_token %}
+        <button type="submit" name="from_forms" class="neon-icon-btn glass-btn" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.32em 1em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; cursor: pointer; margin: 0 4px; outline: none; box-shadow: 0 2px 12px 0 rgba(120,80,255,0.18), 0 0 0 2px rgba(120,80,255,0.18) inset, 0 1.5px 0 0 rgba(255,255,255,0.10) inset; transition: background 0.22s cubic-bezier(.4,0,.2,1), box-shadow 0.22s cubic-bezier(.4,0,.2,1), transform 0.18s cubic-bezier(.4,0,.2,1), opacity 0.18s; position: relative; min-width: 84px; min-height: 32px; letter-spacing: 0.01em; text-align: center; user-select: none; overflow: hidden;">From Forms</button>
+    </form>
     {% endif %}
 
     <table class="teams-table" style="background:none!important;box-shadow:none!important;backdrop-filter:none!important;-webkit-backdrop-filter:none!important;">

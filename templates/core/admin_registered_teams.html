@@ -19,17 +19,54 @@
         background: rgba(128, 0, 255, 0.18);
     }
     .edit-icon-btn {
-        border: none;
-        background: rgba(128, 0, 255, 0.35);
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(0,0,0,0.10);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
         color: #fff;
-        border-radius: 8px;
-        width: 34px;
-        height: 34px;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
         cursor: pointer;
-        font-size: 16px;
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        box-shadow: 0 4px 12px rgba(31, 38, 135, 0.18);
+        transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .edit-icon-btn:hover {
+        transform: scale(1.07);
+        background: rgba(128,0,255,0.22);
+        box-shadow: 0 6px 16px rgba(128,0,255,0.25);
+    }
+    .delete-icon-btn {
+        border: 1px solid rgba(255,255,255,0.18);
+        background: rgba(255, 70, 70, 0.16);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        color: #fff;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 4px 12px rgba(180, 40, 40, 0.2);
+        transition: transform 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+    }
+    .delete-icon-btn:hover {
+        transform: scale(1.07);
+        background: rgba(255, 70, 70, 0.28);
+        box-shadow: 0 6px 16px rgba(255, 70, 70, 0.28);
+    }
+    .edit-icon-btn svg {
+        width: 20px;
+        height: 20px;
+    }
+    .delete-icon-btn svg {
+        width: 20px;
+        height: 20px;
     }
     .edit-row {
         display: none;
@@ -74,7 +111,7 @@
                         <th>Player 1</th>
                         <th>Player 2</th>
                         <th>Team Name</th>
-                        <th style="width:90px;text-align:center;">Action</th>
+                        <th style="width:130px;text-align:center;">Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -84,7 +121,19 @@
                         <td>{{ registration.player2_first_name }} {{ registration.player2_last_name }}</td>
                         <td>{{ registration.player1_first_name }} &amp; {{ registration.player2_first_name }}</td>
                         <td style="text-align:center;">
-                            <button type="button" class="edit-icon-btn" title="Edit" onclick="toggleEditForm('edit-form-{{ registration.id }}')">✏️</button>
+                            <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
+                                <button type="button" class="edit-icon-btn" title="Edit" onclick="toggleEditForm('edit-form-{{ registration.id }}')">
+                                    <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M20 6l6 6M6 26l5-1 14-14-4-4L7 21l-1 5z" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
+                                <form method="post" style="margin:0;">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="delete_registration" value="1" />
+                                    <input type="hidden" name="registration_id" value="{{ registration.id }}" />
+                                    <button type="submit" class="delete-icon-btn" title="Delete" onclick="return confirm('Delete this registration?');">
+                                        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10 11h12M13 11V9h6v2M12 11v12h8V11M15 14v6M17 14v6" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                     <tr>
@@ -145,7 +194,9 @@
                                 </div>
 
                                 <div style="grid-column:1 / -1;display:flex;justify-content:flex-end;gap:8px;">
-                                    <button type="button" class="edit-icon-btn" onclick="toggleEditForm('edit-form-{{ registration.id }}')">✖</button>
+                                    <button type="button" class="edit-icon-btn" onclick="toggleEditForm('edit-form-{{ registration.id }}')" title="Close">
+                                        <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M10 10l12 12M22 10L10 22" stroke="white" stroke-width="2" fill="none" stroke-linecap="round"/></svg>
+                                    </button>
                                     <button type="submit" style="border:none;border-radius:10px;padding:9px 18px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Save Changes</button>
                                 </div>
                             </form>

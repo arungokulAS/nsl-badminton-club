@@ -36,6 +36,12 @@ def admin_registered_teams(request):
 
 		return redirect('/admin/registered-teams')
 
+	if request.method == 'POST' and 'delete_registration' in request.POST:
+		registration_id = request.POST.get('registration_id')
+		if registration_id:
+			TournamentRegistration.objects.filter(id=registration_id).delete()
+		return redirect('/admin/registered-teams')
+
 	registrations = TournamentRegistration.objects.all().order_by('-created_at')
 	context = {
 		'registrations': registrations,

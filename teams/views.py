@@ -3,6 +3,7 @@ from io import TextIOWrapper
 from django.shortcuts import render, redirect
 from django.contrib import messages
 from .models import Team
+from core.models import TournamentRegistration
 
 def admin_teams(request):
 	if not request.session.get('is_admin'):
@@ -74,6 +75,33 @@ def admin_teams(request):
 				messages.error(request, f'Invalid CSV format: {e}')
 		else:
 			messages.error(request, 'No CSV file selected.')
+		return redirect('/admin/teams')
+
+	# Import from registration forms
+	if request.method == 'POST' and 'from_forms' in request.POST and not is_locked:
+		registrations = TournamentRegistration.objects.all().order_by('-created_at')
+		added = 0
+		skipped = 0
+		for registration in registrations:
+			player1_name = f"{registration.player1_first_name} {registration.player1_last_name}".strip()
+			player2_name = f"{registration.player2_first_name} {registration.player2_last_name}".strip()
+			if not player1_name or not player2_name:
+				skipped += 1
+				continue
+			team_name = f"{player1_name} & {player2_name}"
+			if Team.objects.filter(team_name=team_name).exists():
+				skipped += 1
+				continue
+			Team.objects.create(
+				player1_name=player1_name,
+				player2_name=player2_name,
+				team_name=team_name,
+			)
+			added += 1
+		if added:
+			messages.success(request, f'Imported {added} teams from registration forms. {skipped} skipped.')
+		else:
+			messages.error(request, 'No new teams imported from registration forms.')
 		return redirect('/admin/teams')
 
 	# Edit

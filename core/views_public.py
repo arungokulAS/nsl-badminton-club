@@ -28,7 +28,6 @@ def public_contact(request):
 def public_register(request):
     valid_categories = {'A', 'B', 'C', 'D', 'E'}
     valid_relations = {'Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'}
-    valid_media_consents = {'agree', 'do_not_agree'}
 
     if request.method == 'POST':
         player1_first_name = request.POST.get('player1_first_name', '').strip()
@@ -48,8 +47,12 @@ def public_register(request):
         emergency_contact_name = request.POST.get('emergency_contact_name', '').strip()
         emergency_contact_number = request.POST.get('emergency_contact_number', '').strip()
         emergency_contact_relation = request.POST.get('emergency_contact_relation', '').strip()
-        declaration_confirmed = request.POST.get('declaration_confirmed') == 'on'
-        media_consent = request.POST.get('media_consent', '').strip()
+        declaration_info_true = request.POST.get('declaration_info_true') == 'on'
+        declaration_rules_agreed = request.POST.get('declaration_rules_agreed') == 'on'
+        consent_photos_videos = request.POST.get('consent_photos_videos') == 'on'
+
+        declaration_confirmed = declaration_info_true and declaration_rules_agreed
+        media_consent = 'agree' if consent_photos_videos else 'do_not_agree'
 
         required_fields = [
             player1_first_name,
@@ -69,7 +72,7 @@ def public_register(request):
             emergency_contact_relation,
         ]
 
-        if all(required_fields) and player1_category in valid_categories and player2_category in valid_categories and emergency_contact_relation in valid_relations and declaration_confirmed and media_consent in valid_media_consents:
+        if all(required_fields) and player1_category in valid_categories and player2_category in valid_categories and emergency_contact_relation in valid_relations and declaration_info_true and declaration_rules_agreed and consent_photos_videos:
             team_name = f"{player1_first_name} {player1_last_name} / {player2_first_name} {player2_last_name}"
             TournamentRegistration.objects.create(
                 team_name=team_name,
@@ -149,16 +152,13 @@ def public_register(request):
                     'emergency_contact_name': emergency_contact_name,
                     'emergency_contact_number': emergency_contact_number,
                     'emergency_contact_relation': emergency_contact_relation,
-                    'declaration_confirmed': declaration_confirmed,
-                    'media_consent': media_consent,
+                    'declaration_info_true': declaration_info_true,
+                    'declaration_rules_agreed': declaration_rules_agreed,
+                    'consent_photos_videos': consent_photos_videos,
                 },
                 'success': request.GET.get('success') == '1',
                 'categories': sorted(valid_categories),
                 'relations': ['Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'],
-                'media_consents': [
-                    ('agree', 'I agree'),
-                    ('do_not_agree', 'I do not agree'),
-                ],
             },
         )
 
@@ -170,10 +170,6 @@ def public_register(request):
             'form_data': {},
             'categories': ['A', 'B', 'C', 'D', 'E'],
             'relations': ['Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'],
-            'media_consents': [
-                ('agree', 'I agree'),
-                ('do_not_agree', 'I do not agree'),
-            ],
         },
     )
 
