@@ -67,7 +67,8 @@ class AdminScheduleViewTests(TestCase):
 			'round': self.round2.id,
 			'num_courts': 4
 		}, follow=True)
-		self.assertContains(response, 'You can only schedule the next unfinished round.')
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(Match.objects.filter(round=self.round2).count(), 0)
 
 	def test_admin_schedule_prevent_duplicate_schedule(self):
 		# Generate once
@@ -82,4 +83,28 @@ class AdminScheduleViewTests(TestCase):
 			'round': self.round1.id,
 			'num_courts': 4
 		}, follow=True)
-		self.assertContains(response, 'Schedule generated for')
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(Match.objects.filter(round=self.round1).count(), 90)
+
+	def test_admin_schedule_no_same_team_in_same_slot_across_courts(self):
+		self.client.post(reverse('admin_schedule'), {
+			'generate_schedule': '1',
+			'round': self.round1.id,
+			'num_courts': 4
+		}, follow=True)
+
+		matches_by_court = {
+			court.id: list(Match.objects.filter(round=self.round1, court=court).order_by('id'))
+			for court in Court.objects.order_by('id')
+		}
+		max_slots = max((len(matches) for matches in matches_by_court.values()), default=0)
+
+		for slot in range(max_slots):
+			teams_in_slot = set()
+			for court_matches in matches_by_court.values():
+				if slot >= len(court_matches):
+					continue
+				match = court_matches[slot]
+				for team_id in (match.team1_id, match.team2_id):
+					self.assertNotIn(team_id, teams_in_slot)
+					teams_in_slot.add(team_id)

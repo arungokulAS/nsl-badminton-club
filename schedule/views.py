@@ -628,6 +628,7 @@ def admin_schedule(request):
 				cycles = 0
 				while any(court_queues) and cycles < max_cycles:
 					progress = False
+					teams_in_current_slot = set()
 					for cidx, court in enumerate(courts):
 						if cidx >= len(court_queues) or not court_queues[cidx]:
 							continue
@@ -636,6 +637,10 @@ def admin_schedule(request):
 						scheduled = False
 						while attempts < len(queue):
 							group, team1, team2 = queue[0]
+							if team1.id in teams_in_current_slot or team2.id in teams_in_current_slot:
+								queue.rotate(-1)
+								attempts += 1
+								continue
 							recent1 = team_last_slots.get(team1.id, deque(maxlen=2))
 							recent2 = team_last_slots.get(team2.id, deque(maxlen=2))
 							conflict1 = len(recent1) == 2 and recent1[0] == time_slot - 2 and recent1[1] == time_slot - 1
@@ -652,6 +657,8 @@ def admin_schedule(request):
 								team_last_slots[team2.id] = deque(maxlen=2)
 							team_last_slots[team1.id].append(time_slot)
 							team_last_slots[team2.id].append(time_slot)
+							teams_in_current_slot.add(team1.id)
+							teams_in_current_slot.add(team2.id)
 							progress = True
 							scheduled = True
 							break
