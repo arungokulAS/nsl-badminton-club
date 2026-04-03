@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block content %}
+<div style="margin-top:120px;display:flex;justify-content:center;padding:0 14px 40px 14px;">
+    <div style="width:100%;max-width:1100px;background:rgba(0,0,0,0.18);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.18);border-radius:20px;padding:24px;box-shadow:0 10px 28px rgba(0,0,0,0.2);">
+        <h2 style="color:#fff;margin:0 0 14px 0;font-size:2rem;text-align:center;">Registered Teams (Admin)</h2>
+
+        {% if registrations %}
+            {% for registration in registrations %}
+                <form method="post" style="border:1px solid rgba(255,255,255,0.2);border-radius:14px;padding:14px;margin-bottom:14px;background:rgba(0,0,0,0.16);display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="edit_registration" value="1" />
+                    <input type="hidden" name="registration_id" value="{{ registration.id }}" />
+
+                    <div style="grid-column:1 / span 2;color:#fff;font-weight:700;">Registration #{{ registration.id }} · {{ registration.created_at }}</div>
+
+                    <div style="grid-column:1 / span 2;color:#fff;font-weight:600;">Player 1</div>
+                    <input name="player1_first_name" value="{{ registration.player1_first_name }}" placeholder="Player 1 First Name" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player1_last_name" value="{{ registration.player1_last_name }}" placeholder="Player 1 Last Name" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <select name="player1_category" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;">
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if registration.player1_category == category %}selected{% endif %}>P1 Category {{ category }}</option>
+                        {% endfor %}
+                    </select>
+                    <input name="player1_contact_number" value="{{ registration.player1_contact_number }}" placeholder="P1 Contact Number" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player1_email" type="email" value="{{ registration.player1_email }}" placeholder="P1 Email" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player1_city" value="{{ registration.player1_city }}" placeholder="P1 City/Location" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+
+                    <div style="grid-column:1 / span 2;color:#fff;font-weight:600;margin-top:2px;">Player 2</div>
+                    <input name="player2_first_name" value="{{ registration.player2_first_name }}" placeholder="Player 2 First Name" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player2_last_name" value="{{ registration.player2_last_name }}" placeholder="Player 2 Last Name" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <select name="player2_category" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;">
+                        {% for category in categories %}
+                            <option value="{{ category }}" {% if registration.player2_category == category %}selected{% endif %}>P2 Category {{ category }}</option>
+                        {% endfor %}
+                    </select>
+                    <input name="player2_contact_number" value="{{ registration.player2_contact_number }}" placeholder="P2 Contact Number" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player2_email" type="email" value="{{ registration.player2_email }}" placeholder="P2 Email" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="player2_city" value="{{ registration.player2_city }}" placeholder="P2 City/Location" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+
+                    <div style="grid-column:1 / span 2;color:#fff;font-weight:600;margin-top:2px;">Emergency Contact</div>
+                    <input name="emergency_contact_name" value="{{ registration.emergency_contact_name }}" placeholder="Emergency Name" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <input name="emergency_contact_number" value="{{ registration.emergency_contact_number }}" placeholder="Emergency Contact No." required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;" />
+                    <select name="emergency_contact_relation" required style="padding:9px 10px;border-radius:8px;border:1px solid rgba(255,255,255,0.25);background:rgba(255,255,255,0.08);color:#fff;">
+                        {% for relation in relations %}
+                            <option value="{{ relation }}" {% if registration.emergency_contact_relation == relation %}selected{% endif %}>{{ relation }}</option>
+                        {% endfor %}
+                    </select>
+
+                    <label style="display:flex;align-items:center;gap:8px;color:#fff;">
+                        <input type="checkbox" name="declaration_confirmed" {% if registration.declaration_confirmed %}checked{% endif %} />
+                        Declaration Confirmed
+                    </label>
+
+                    <div style="grid-column:1 / span 2;color:#fff;font-weight:600;">Photos & Videos Consent</div>
+                    <div style="grid-column:1 / span 2;display:flex;gap:16px;flex-wrap:wrap;">
+                        {% for consent_value, consent_label in media_consents %}
+                            <label style="display:flex;align-items:center;gap:8px;color:#fff;">
+                                <input type="radio" name="media_consent" value="{{ consent_value }}" {% if registration.media_consent == consent_value %}checked{% endif %} required />
+                                {{ consent_label }}
+                            </label>
+                        {% endfor %}
+                    </div>
+
+                    <div style="grid-column:1 / span 2;display:flex;justify-content:flex-end;">
+                        <button type="submit" style="border:none;border-radius:10px;padding:9px 18px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Save Changes</button>
+                    </div>
+                </form>
+            {% endfor %}
+        {% else %}
+            <div style="color:#fff;text-align:center;">No registration data found.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

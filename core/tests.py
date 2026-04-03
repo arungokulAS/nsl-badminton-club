@@ -43,3 +43,65 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(registration.emergency_contact_relation, 'Brother')
 		self.assertTrue(registration.declaration_confirmed)
 		self.assertEqual(registration.media_consent, 'agree')
+
+	def test_admin_registered_teams_requires_admin_session(self):
+		response = self.client.get(reverse('admin_registered_teams'))
+		self.assertEqual(response.status_code, 302)
+		self.assertIn('/admin/login', response.url)
+
+	def test_admin_registered_teams_can_edit_registration(self):
+		registration = TournamentRegistration.objects.create(
+			team_name='Arun Kumar / Ravi Das',
+			player1_first_name='Arun',
+			player1_last_name='Kumar',
+			player1_category='A',
+			player1_contact_number='9999999999',
+			player1_email='arun@example.com',
+			player1_city='Liverpool',
+			player2_first_name='Ravi',
+			player2_last_name='Das',
+			player2_category='B',
+			player2_contact_number='8888888888',
+			player2_email='ravi@example.com',
+			player2_city='Liverpool',
+			emergency_contact_name='Suresh',
+			emergency_contact_number='7777777777',
+			emergency_contact_relation='Brother',
+			declaration_confirmed=True,
+			media_consent='agree',
+		)
+
+		session = self.client.session
+		session['is_admin'] = True
+		session.save()
+
+		response = self.client.post(
+			reverse('admin_registered_teams'),
+			{
+				'edit_registration': '1',
+				'registration_id': registration.id,
+				'player1_first_name': 'ArunEdited',
+				'player1_last_name': 'Kumar',
+				'player1_category': 'A',
+				'player1_contact_number': '9999999999',
+				'player1_email': 'arun@example.com',
+				'player1_city': 'Liverpool',
+				'player2_first_name': 'Ravi',
+				'player2_last_name': 'Das',
+				'player2_category': 'B',
+				'player2_contact_number': '8888888888',
+				'player2_email': 'ravi@example.com',
+				'player2_city': 'Liverpool',
+				'emergency_contact_name': 'Suresh',
+				'emergency_contact_number': '7777777777',
+				'emergency_contact_relation': 'Brother',
+				'declaration_confirmed': 'on',
+				'media_consent': 'do_not_agree',
+			},
+			follow=True,
+		)
+
+		self.assertEqual(response.status_code, 200)
+		registration.refresh_from_db()
+		self.assertEqual(registration.player1_first_name, 'ArunEdited')
+		self.assertEqual(registration.media_consent, 'do_not_agree')

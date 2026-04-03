@@ -43,6 +43,7 @@ from print_views.views_print_emerging_teams import print_emerging_teams
 from print_views.views_print_downloads import download_group_list_xlsx, download_team_list_xlsx, download_schedule_xlsx, download_schedule_court_xlsx
 from print_views.views_print_results import print_results
 from core.views_public import public_referee, public_contact, public_register, print_menu
+from core.views import admin_registered_teams
 
 urlpatterns = [
     # Home page
@@ -54,6 +55,7 @@ urlpatterns = [
     path('admin/groups', admin_groups, name='admin_groups'),
     path('admin/schedule', admin_schedule, name='admin_schedule'),
     path('admin/live-manage', admin_live_manage, name='admin_live_manage'),
+    path('admin/registered-teams', admin_registered_teams, name='admin_registered_teams'),
     path('admin/finish-round', admin_finish_round, name='admin_finish_round'),
     path('tournament/results', public_results, name='public_results'),
     path('tournament/results/api', public_results_api, name='public_results_api'),
