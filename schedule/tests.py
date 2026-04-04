@@ -2,6 +2,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
 from django.contrib.auth.models import User
+import os
 from schedule.models import Round, Court
 from teams.models import Team
 from groups.models import Group
@@ -108,3 +109,33 @@ class AdminScheduleViewTests(TestCase):
 				for team_id in (match.team1_id, match.team2_id):
 					self.assertNotIn(team_id, teams_in_slot)
 					teams_in_slot.add(team_id)
+
+	def test_unlock_round_settings_works_for_multiple_rounds(self):
+		team1 = Team.objects.order_by('id').first()
+		team2 = Team.objects.order_by('id')[1]
+		final_round = Round.objects.create(name='Final', order=7)
+
+		Match.objects.create(round=self.round1, team1=team1, team2=team2, court=self.court1, status='scheduled')
+		Match.objects.create(round=final_round, team1=team1, team2=team2, court=self.court2, status='scheduled')
+
+		self.round1.settings_locked = True
+		self.round1.save(update_fields=['settings_locked'])
+		final_round.settings_locked = True
+		final_round.save(update_fields=['settings_locked'])
+
+		admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+
+		for target_round in (self.round1, final_round):
+			response = self.client.post(
+				reverse('admin_schedule'),
+				{
+					'unlock_round_settings': '1',
+					'round_id': target_round.id,
+					'admin_password': admin_password,
+				},
+			)
+			self.assertEqual(response.status_code, 302)
+			self.assertEqual(response.url, f'/admin/schedule?show_round={target_round.id}')
+
+			updated_round = Round.objects.get(id=target_round.id)
+			self.assertFalse(updated_round.settings_locked)
