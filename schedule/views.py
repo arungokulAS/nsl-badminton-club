@@ -789,7 +789,7 @@ def admin_schedule(request):
 		if request.headers.get('x-requested-with') == 'XMLHttpRequest':
 			from django.template.loader import render_to_string
 			from django.http import JsonResponse
-			rounds = Round.objects.all().order_by('order')
+			rounds = Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7], name__in=STANDARD_ROUND_NAMES).order_by('order')
 			locked_num_courts = request.session.get('locked_num_courts')
 			courts = Court.objects.all().order_by('id')
 			if locked_num_courts:
@@ -798,16 +798,7 @@ def admin_schedule(request):
 				courts = list(courts)
 			groups = Group.objects.all().order_by('group_name')
 			matches = Match.objects.select_related('round', 'court', 'team1', 'team2').all().order_by('round__order', 'court__id')
-			show_round = request.GET.get('show_round')
-			current_round = rounds.filter(is_finished=False).first() if rounds.exists() else None
-			selected_round = None
-			if show_round:
-				try:
-					selected_round = rounds.get(id=int(show_round))
-				except Exception:
-					selected_round = current_round or rounds.first()
-			else:
-				selected_round = current_round or rounds.first()
+			selected_round = next_round if next_round else (rounds.filter(is_finished=False).first() if rounds.exists() else None)
 			show_round = selected_round.id if selected_round else None
 			has_matches_for_selected_round = matches.filter(round=selected_round).exists() if selected_round else False
 			selected_round_match_count = matches.filter(round=selected_round).count() if selected_round else 0

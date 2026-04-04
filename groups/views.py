@@ -68,7 +68,18 @@ def admin_groups(request):
 		for group in groups:
 			group.is_locked = True
 			group.save()
-		messages.success(request, 'Groups locked.')
+
+		from matches.models import Match
+		from schedule.models import Round
+		Match.objects.all().delete()
+		Round.objects.filter(order__in=[1, 2, 3, 4, 5, 6, 7]).update(
+			is_finished=False,
+			settings_locked=False,
+			points_per_set=21,
+			sets_per_match=1,
+		)
+		request.session['locked_num_courts'] = None
+		messages.success(request, 'Groups locked. Schedule reset to Group Stage.')
 		return redirect('/admin/groups')
 
 	return render(request, 'groups/admin_groups.html', {
