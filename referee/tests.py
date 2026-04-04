@@ -45,7 +45,7 @@ class AdminLiveManageTests(TestCase):
 		self.assertContains(response, 'Pending')
 		self.assertContains(response, 'Save')
 
-	def test_admin_live_manage_shows_dash_before_referee_submission(self):
+	def test_admin_live_manage_shows_action_controls_before_referee_submission(self):
 		new_match = Match.objects.create(
 			round=self.round,
 			team1=self.team1,
@@ -55,7 +55,8 @@ class AdminLiveManageTests(TestCase):
 		)
 		response = self.client.get(reverse('admin_live_manage'))
 		self.assertEqual(response.status_code, 200)
-		self.assertContains(response, '<span style="color:#d8d8d8;">-</span>', html=True)
+		self.assertContains(response, 'name="action" value="save_set"')
+		self.assertContains(response, 'Waiting referee submission')
 
 	def test_admin_live_manage_save_and_edit_cycle(self):
 		response = self.client.post(

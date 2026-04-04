@@ -62,7 +62,7 @@
                             {% else %}
                                 -
                             {% endif %}
-                        {% elif match.referee_ready %}
+                        {% else %}
                             <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;white-space:nowrap;">
                                 {% csrf_token %}
                                 <input type="hidden" name="match_id" value="{{ match.id }}">
@@ -70,13 +70,19 @@
                                 <input type="hidden" name="set_number" value="{{ set_number }}">
                                 <input type="text" name="team1_value" value="{% if set_number == 1 %}{{ score.team1_set1|default:'' }}{% elif set_number == 2 %}{{ score.team1_set2|default:'' }}{% else %}{{ score.team1_set3|default:'' }}{% endif %}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
                                 <input type="text" name="team2_value" value="{% if set_number == 1 %}{{ score.team2_set1|default:'' }}{% elif set_number == 2 %}{{ score.team2_set2|default:'' }}{% else %}{{ score.team2_set3|default:'' }}{% endif %}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
-                                <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Save</button>
+                                <button type="submit" {% if not match.referee_ready %}disabled title="Waiting referee submission" style="background: linear-gradient(120deg, rgba(20,20,40,0.6) 0%, rgba(60,30,120,0.6) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: not-allowed; opacity: 0.7;"{% else %}style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;"{% endif %}>Save</button>
                             </form>
-                        {% else %}
-                            Waiting referee
                         {% endif %}
                     {% else %}
-                        -
+                        <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;white-space:nowrap;">
+                            {% csrf_token %}
+                            <input type="hidden" name="match_id" value="{{ match.id }}">
+                            <input type="hidden" name="action" value="save_set">
+                            <input type="hidden" name="set_number" value="{{ set_number }}">
+                            <input type="text" name="team1_value" value="" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
+                            <input type="text" name="team2_value" value="" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
+                            <button type="submit" disabled title="Waiting referee submission" style="background: linear-gradient(120deg, rgba(20,20,40,0.6) 0%, rgba(60,30,120,0.6) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: not-allowed; opacity: 0.7;">Save</button>
+                        </form>
                     {% endif %}
                 {% endif %}
             </td>
