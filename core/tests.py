@@ -37,7 +37,7 @@ class PublicRegisterViewTests(TestCase):
 				'emergency_contact_relation': 'Brother',
 				'declaration_info_true': 'on',
 				'declaration_rules_agreed': 'on',
-				'consent_photos_videos': 'on',
+				'media_consent': 'agree',
 			},
 			follow=True,
 		)
