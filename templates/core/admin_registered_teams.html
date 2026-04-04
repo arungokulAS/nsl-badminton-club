@@ -108,8 +108,8 @@
             <table class="registered-table">
                 <thead>
                     <tr>
-                        <th>Player 1</th>
-                        <th>Player 2</th>
+                        <th>Player 1 First Name</th>
+                        <th>Player 2 First Name</th>
                         <th>Team Name</th>
                         <th style="width:130px;text-align:center;">Action</th>
                     </tr>
@@ -117,8 +117,8 @@
                 <tbody>
                 {% for registration in registrations %}
                     <tr>
-                        <td>{{ registration.player1_first_name }} {{ registration.player1_last_name }}</td>
-                        <td>{{ registration.player2_first_name }} {{ registration.player2_last_name }}</td>
+                        <td>{{ registration.player1_first_name }}</td>
+                        <td>{{ registration.player2_first_name }}</td>
                         <td>{{ registration.player1_first_name }} &amp; {{ registration.player2_first_name }}</td>
                         <td style="text-align:center;">
                             <div style="display:flex;align-items:center;justify-content:center;gap:8px;">
