@@ -309,7 +309,7 @@ def admin_live_manage(request):
 				return redirect('/admin/live-manage')
 			action = request.POST.get('action')
 
-			if action not in ('save_score', 'edit_score'):
+			if action not in ('save_set', 'edit_score'):
 				messages.error(request, 'Invalid action.')
 				return redirect('/admin/live-manage')
 
@@ -342,6 +342,25 @@ def admin_live_manage(request):
 					messages.error(request, 'All set scores must be submitted by referee before saving.')
 					return redirect('/admin/live-manage')
 
+				set_number_raw = request.POST.get('set_number')
+				try:
+					set_number = int(set_number_raw)
+				except (TypeError, ValueError):
+					messages.error(request, 'Invalid set number.')
+					return redirect('/admin/live-manage')
+				if set_number < 1 or set_number > sets_per_match:
+					messages.error(request, 'Set number is out of range.')
+					return redirect('/admin/live-manage')
+
+				set_submitted = (
+					score.set1_submitted if set_number == 1
+					else score.set2_submitted if set_number == 2
+					else score.set3_submitted
+				)
+				if not set_submitted:
+					messages.error(request, 'Selected set is not yet submitted by referee.')
+					return redirect('/admin/live-manage')
+
 				team1_value_raw = request.POST.get('team1_value')
 				team2_value_raw = request.POST.get('team2_value')
 				try:
@@ -354,12 +373,32 @@ def admin_live_manage(request):
 					messages.error(request, 'Score cannot be tied.')
 					return redirect('/admin/live-manage')
 
-				winner = match.team1 if team1_value > team2_value else match.team2
-				score.team1_score = team1_value
-				score.team2_score = team2_value
+				if set_number == 1:
+					score.team1_set1 = team1_value
+					score.team2_set1 = team2_value
+				elif set_number == 2:
+					score.team1_set2 = team1_value
+					score.team2_set2 = team2_value
+				else:
+					score.team1_set3 = team1_value
+					score.team2_set3 = team2_value
+
+				score.team1_score = (score.team1_set1 or 0) + (score.team1_set2 or 0) + (score.team1_set3 or 0)
+				score.team2_score = (score.team2_set1 or 0) + (score.team2_set2 or 0) + (score.team2_set3 or 0)
+
+				winner = _determine_winner_from_sets(match, score, sets_per_match)
+				if not winner:
+					messages.error(request, 'Unable to determine winner from submitted set scores.')
+					return redirect('/admin/live-manage')
 				score.winner = winner
 				score.locked = True
-				score.save(update_fields=['team1_score', 'team2_score', 'winner', 'locked'])
+				score.save(update_fields=[
+					'team1_set1', 'team2_set1',
+					'team1_set2', 'team2_set2',
+					'team1_set3', 'team2_set3',
+					'team1_score', 'team2_score',
+					'winner', 'locked',
+				])
 				match.status = 'completed'
 				match.save(update_fields=['status'])
 				messages.success(request, 'Score saved and confirmed.')

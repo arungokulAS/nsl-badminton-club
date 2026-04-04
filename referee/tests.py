@@ -61,7 +61,8 @@ class AdminLiveManageTests(TestCase):
 			reverse('admin_live_manage'),
 			{
 				'match_id': self.match.id,
-				'action': 'save_score',
+				'action': 'save_set',
+				'set_number': '1',
 				'team1_value': '40',
 				'team2_value': '35',
 			},
@@ -74,8 +75,8 @@ class AdminLiveManageTests(TestCase):
 		self.assertEqual(self.match.status, 'completed')
 		self.assertTrue(self.score.locked)
 		self.assertEqual(self.score.winner_id, self.team1.id)
-		self.assertEqual(self.score.team1_score, 40)
-		self.assertEqual(self.score.team2_score, 35)
+		self.assertEqual(self.score.team1_score, 61)
+		self.assertEqual(self.score.team2_score, 53)
 		self.assertContains(response, 'Confirmed')
 		self.assertContains(response, 'Edit')
 
@@ -95,3 +96,36 @@ class AdminLiveManageTests(TestCase):
 		self.assertFalse(self.score.locked)
 		self.assertContains(edit_response, 'Pending')
 		self.assertContains(edit_response, 'Save')
+
+	def test_admin_live_manage_three_set_layout_shows_first_row_team_names_only(self):
+		three_set_round = Round.objects.create(name='Qualifier', order=2, sets_per_match=3)
+		three_set_match = Match.objects.create(
+			round=three_set_round,
+			team1=self.team1,
+			team2=self.team2,
+			court=self.court,
+			status='awaiting_admin_confirmation',
+		)
+		Score.objects.create(
+			match=three_set_match,
+			team1_score=46,
+			team2_score=42,
+			team1_set1=15,
+			team2_set1=11,
+			team1_set2=12,
+			team2_set2=15,
+			team1_set3=19,
+			team2_set3=16,
+			set1_submitted=True,
+			set2_submitted=True,
+			set3_submitted=True,
+			locked=False,
+		)
+		self.round.is_finished = True
+		self.round.save(update_fields=['is_finished'])
+
+		response = self.client.get(reverse('admin_live_manage'))
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, self.team1.team_name, count=1)
+		self.assertContains(response, self.team2.team_name, count=1)
+		self.assertContains(response, 'name="action" value="save_set"', count=3)

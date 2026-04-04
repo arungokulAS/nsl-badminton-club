@@ -25,13 +25,13 @@
             {% if show_group_column %}
                 <td>{% if forloop.first %}{% if match.group %}{{ match.group.group_name }}{% else %}-{% endif %}{% endif %}</td>
             {% endif %}
-            <td>{{ match.team1.team_name }}</td>
+            <td>{% if forloop.first %}{{ match.team1.team_name }}{% endif %}</td>
             <td>
                 {% if score %}
                     {% if set_number == 1 %}{{ score.team1_set1|default:'-' }}{% elif set_number == 2 %}{{ score.team1_set2|default:'-' }}{% else %}{{ score.team1_set3|default:'-' }}{% endif %}
                 {% else %}-{% endif %}
             </td>
-            <td>{{ match.team2.team_name }}</td>
+            <td>{% if forloop.first %}{{ match.team2.team_name }}{% endif %}</td>
             <td>
                 {% if score %}
                     {% if set_number == 1 %}{{ score.team2_set1|default:'-' }}{% elif set_number == 2 %}{{ score.team2_set2|default:'-' }}{% else %}{{ score.team2_set3|default:'-' }}{% endif %}
@@ -50,27 +50,28 @@
                 {% if match.round.is_finished %}
                     Locked
                 {% else %}
-                    {% if forloop.first %}
-                        {% if score %}
-                            {% if score.locked %}
+                    {% if score %}
+                        {% if score.locked %}
+                            {% if forloop.first %}
                                 <form method="post" style="display:inline;">
                                     {% csrf_token %}
                                     <input type="hidden" name="match_id" value="{{ match.id }}">
                                     <input type="hidden" name="action" value="edit_score">
                                     <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Edit</button>
                                 </form>
-                            {% elif match.referee_ready %}
-                                <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="match_id" value="{{ match.id }}">
-                                    <input type="hidden" name="action" value="save_score">
-                                    <input type="text" name="team1_value" value="{{ score.team1_score|default:'' }}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
-                                    <input type="text" name="team2_value" value="{{ score.team2_score|default:'' }}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
-                                    <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Save</button>
-                                </form>
                             {% else %}
-                                Waiting referee
+                                -
                             {% endif %}
+                        {% elif match.referee_ready %}
+                            <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                                {% csrf_token %}
+                                <input type="hidden" name="match_id" value="{{ match.id }}">
+                                <input type="hidden" name="action" value="save_set">
+                                <input type="hidden" name="set_number" value="{{ set_number }}">
+                                <input type="text" name="team1_value" value="{% if set_number == 1 %}{{ score.team1_set1|default:'' }}{% elif set_number == 2 %}{{ score.team1_set2|default:'' }}{% else %}{{ score.team1_set3|default:'' }}{% endif %}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
+                                <input type="text" name="team2_value" value="{% if set_number == 1 %}{{ score.team2_set1|default:'' }}{% elif set_number == 2 %}{{ score.team2_set2|default:'' }}{% else %}{{ score.team2_set3|default:'' }}{% endif %}" required inputmode="numeric" pattern="\d{1,3}" maxlength="3" oninput="this.value=this.value.replace(/\D/g,'').slice(0,3)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 56px; min-width: 56px; max-width: 56px; letter-spacing: 0.02em; text-align:center;">
+                                <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Save</button>
+                            </form>
                         {% else %}
                             Waiting referee
                         {% endif %}
