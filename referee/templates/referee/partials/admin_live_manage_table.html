@@ -38,16 +38,8 @@
                 {% else %}-{% endif %}
             </td>
             <td>
-                {% if score %}
-                    {% if set_number == 1 and score.set1_submitted %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
-                    {% elif set_number == 2 and score.set2_submitted %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
-                    {% elif set_number == 3 and score.set3_submitted %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
-                    {% else %}
-                        <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
-                    {% endif %}
+                {% if score and score.locked %}
+                    <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Confirmed</span>
                 {% else %}
                     <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
                 {% endif %}
@@ -56,58 +48,34 @@
                 {% if match.round.is_finished %}
                     Locked
                 {% else %}
-                    {% if score and set_number == 1 and score.set1_submitted or score and set_number == 2 and score.set2_submitted or score and set_number == 3 and score.set3_submitted %}
-                        <form method="post" style="display:inline;">
-                            {% csrf_token %}
-                            <input type="hidden" name="match_id" value="{{ match.id }}">
-                            <input type="hidden" name="action" value="edit_set">
-                            <input type="hidden" name="set_number" value="{{ set_number }}">
-                            <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Edit</button>
-                        </form>
+                    {% if forloop.first %}
+                        {% if score and score.locked %}
+                            Confirmed
+                        {% elif score and score.set1_submitted %}
+                            {% if match.round.sets_per_match < 2 or score.set2_submitted %}
+                                {% if match.round.sets_per_match < 3 or score.set3_submitted %}
+                                    <form method="post" style="display:inline;">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="match_id" value="{{ match.id }}">
+                                        <input type="hidden" name="action" value="confirm_score">
+                                        <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Confirm</button>
+                                    </form>
+                                {% else %}
+                                    Waiting referee
+                                {% endif %}
+                            {% else %}
+                                Waiting referee
+                            {% endif %}
+                        {% else %}
+                            Waiting referee
+                        {% endif %}
                     {% else %}
-                        <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                            {% csrf_token %}
-                            <input type="hidden" name="match_id" value="{{ match.id }}">
-                            <input type="hidden" name="action" value="save_set">
-                            <input type="hidden" name="set_number" value="{{ set_number }}">
-                            <input type="text" name="team1_value" value="{% if score %}{% if set_number == 1 %}{{ score.team1_set1|default:'' }}{% elif set_number == 2 %}{{ score.team1_set2|default:'' }}{% else %}{{ score.team1_set3|default:'' }}{% endif %}{% endif %}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 48px; min-width: 48px; max-width: 48px; letter-spacing: 0.02em; text-align:center;">
-                            <input type="text" name="team2_value" value="{% if score %}{% if set_number == 1 %}{{ score.team2_set1|default:'' }}{% elif set_number == 2 %}{{ score.team2_set2|default:'' }}{% else %}{{ score.team2_set3|default:'' }}{% endif %}{% endif %}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)" style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 1.02em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); width: 48px; min-width: 48px; max-width: 48px; letter-spacing: 0.02em; text-align:center;">
-                            <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Save</button>
-                        </form>
+                        -
                     {% endif %}
                 {% endif %}
             </td>
         </tr>
         {% endfor %}
-        <tr>
-            <td></td>
-            {% if show_group_column %}<td></td>{% endif %}
-            <td colspan="4" style="font-weight:600;color:#cfd7ff;">Winner</td>
-            <td>
-                {% if score and score.locked %}
-                    <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(46,204,113,0.18);color:#7dffb6;font-weight:600;font-size:0.9em;">Complete</span>
-                {% else %}
-                    <span style="display:inline-block;padding:4px 10px;border-radius:12px;background:rgba(255,165,0,0.18);color:#ffb347;font-weight:600;font-size:0.9em;">Pending</span>
-                {% endif %}
-            </td>
-            <td>
-                {% if match.round.is_finished %}
-                    Locked
-                {% else %}
-                    <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-                        {% csrf_token %}
-                        <input type="hidden" name="match_id" value="{{ match.id }}">
-                        <input type="hidden" name="action" value="save_winner">
-                        <select name="winner" required style="background: linear-gradient(120deg, #0a0a1a 0%, #181830 100%); color: #fff; border: 1.5px solid #2e2e4d; border-radius: 12px; padding: 0.32em 0.6em; font-size: 0.95em; font-family: 'Inter', 'Segoe UI', Arial, sans-serif; font-weight: 500; outline: none; box-shadow: 0 2px 12px 0 rgba(40,40,80,0.18); min-width: 140px;">
-                            <option value="">Select Winner</option>
-                            <option value="1" {% if score and score.winner_id == match.team1_id %}selected{% endif %}>{{ match.team1.team_name }}</option>
-                            <option value="2" {% if score and score.winner_id == match.team2_id %}selected{% endif %}>{{ match.team2.team_name }}</option>
-                        </select>
-                        <button type="submit" style="background: linear-gradient(120deg, rgba(20,20,40,0.92) 0%, rgba(60,30,120,0.92) 100%); color: #fff; border: none; border-radius: 12px; padding: 0.35em 0.7em; font-size: 0.9em; cursor: pointer;">Save</button>
-                    </form>
-                {% endif %}
-            </td>
-        </tr>
         {% endwith %}
         {% endfor %}
         </tbody>
