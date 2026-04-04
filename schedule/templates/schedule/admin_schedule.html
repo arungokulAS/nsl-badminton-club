@@ -158,7 +158,11 @@
             <button type="submit" name="lock_round_settings" value="1" style="background:rgba(46,204,113,0.2);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Lock</button>
         </div>
     {% else %}
-        <div style="color:#7dffb6;font-weight:600;">Settings are locked for this round.</div>
+        <div style="display:flex;flex-direction:column;align-items:center;gap:10px;">
+            <div style="color:#7dffb6;font-weight:600;">Settings are locked for this round.</div>
+            <input type="password" name="admin_password" placeholder="Admin Password" required style="border-radius:8px;padding:4px 10px;min-width:200px;text-align:center;">
+            <button type="submit" name="unlock_round_settings" value="1" style="background:rgba(255,110,110,0.22);color:#fff;border:none;border-radius:8px;padding:8px 22px;font-weight:600;">Unlock</button>
+        </div>
     {% endif %}
 </form>
 <form method="post" style="display:flex;flex-direction:column;align-items:center;gap:12px;margin-top:36px;">
