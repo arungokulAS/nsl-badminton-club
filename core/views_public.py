@@ -3,6 +3,7 @@ from django.conf import settings
 from django.core.mail import get_connection
 from django.core.mail import send_mail
 import threading
+import logging
 
 from groups.models import Group
 from matches.models import Match
@@ -20,11 +21,21 @@ STANDARD_ROUND_NAMES = [
     'Final',
 ]
 
+logger = logging.getLogger(__name__)
+
 
 def _send_registration_confirmation_email_async(recipients, team_name):
     if not recipients:
         return
     if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ENABLED', True):
+        return
+    email_backend = getattr(settings, 'EMAIL_BACKEND', '')
+    email_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+    if 'smtp.EmailBackend' in email_backend and not email_password:
+        logger.warning(
+            'Registration confirmation email skipped because EMAIL_HOST_PASSWORD is not configured. recipients=%s',
+            recipients,
+        )
         return
 
     subject = '🎉 You’re Almost In! NSL Badminton Tournament Registration'
@@ -49,7 +60,7 @@ def _send_registration_confirmation_email_async(recipients, team_name):
     def _send():
         try:
             connection = get_connection(
-                fail_silently=True,
+                fail_silently=False,
                 timeout=getattr(settings, 'EMAIL_TIMEOUT', 8),
             )
             send_mail(
@@ -57,11 +68,15 @@ def _send_registration_confirmation_email_async(recipients, team_name):
                 message=message,
                 from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'netsmashersliverpool@gmail.com'),
                 recipient_list=recipients,
-                fail_silently=True,
+                fail_silently=False,
                 connection=connection,
             )
         except Exception:
-            pass
+            logger.exception(
+                'Registration confirmation email failed for recipients=%s team=%s',
+                recipients,
+                team_name,
+            )
 
     if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ASYNC', True):
         _send()
