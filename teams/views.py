@@ -83,8 +83,8 @@ def admin_teams(request):
 		added = 0
 		skipped = 0
 		for registration in registrations:
-			player1_name = f"{registration.player1_first_name} {registration.player1_last_name}".strip()
-			player2_name = f"{registration.player2_first_name} {registration.player2_last_name}".strip()
+			player1_name = (registration.player1_first_name or '').strip()
+			player2_name = (registration.player2_first_name or '').strip()
 			if not player1_name or not player2_name:
 				skipped += 1
 				continue

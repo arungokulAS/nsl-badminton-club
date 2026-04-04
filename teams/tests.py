@@ -38,8 +38,9 @@ class AdminTeamsImportFromFormsTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertEqual(Team.objects.count(), 1)
 		team = Team.objects.first()
-		self.assertEqual(team.player1_name, 'Arun Kumar')
-		self.assertEqual(team.player2_name, 'Ravi Das')
+		self.assertEqual(team.player1_name, 'Arun')
+		self.assertEqual(team.player2_name, 'Ravi')
+		self.assertEqual(team.team_name, 'Arun & Ravi')
 
 	def test_unlock_teams_resets_round_locks_and_court_lock(self):
 		Round.objects.create(
