@@ -63,7 +63,7 @@
                                 -
                             {% endif %}
                         {% elif match.referee_ready %}
-                            <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+                            <form method="post" style="display:flex;gap:8px;align-items:center;flex-wrap:nowrap;white-space:nowrap;">
                                 {% csrf_token %}
                                 <input type="hidden" name="match_id" value="{{ match.id }}">
                                 <input type="hidden" name="action" value="save_set">
