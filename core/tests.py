@@ -12,7 +12,10 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, 'Tournament Registration')
 
-	@override_settings(EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend')
+	@override_settings(
+		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+		REGISTRATION_CONFIRMATION_EMAIL_ASYNC=False,
+	)
 	def test_register_submission_creates_record(self):
 		response = self.client.post(
 			reverse('public_register'),

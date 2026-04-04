@@ -1,6 +1,8 @@
 from django.shortcuts import redirect, render
 from django.conf import settings
+from django.core.mail import get_connection
 from django.core.mail import send_mail
+import threading
 
 from groups.models import Group
 from matches.models import Match
@@ -17,6 +19,56 @@ STANDARD_ROUND_NAMES = [
     'Losers Final',
     'Final',
 ]
+
+
+def _send_registration_confirmation_email_async(recipients, team_name):
+    if not recipients:
+        return
+    if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ENABLED', True):
+        return
+
+    subject = '🎉 You’re Almost In! NSL Badminton Tournament Registration'
+    message = (
+        "Hey Team! 🏸\n\n"
+        "Thanks for signing up for the NSL Badminton Tournament 2025! "
+        "Your registration details are safely with us.\n\n"
+        "Just a quick heads-up: slots are limited, and your spot is official only after the registration fee is received. "
+        "First to pay = first on the official teams list! ⏱️\n\n"
+        "Payment Info:\n\n"
+        "• Account Name: MR A J JOY\n\n"
+        "• Account Number: 89857653\n\n"
+        "• Sort Code: 09-01-28\n\n"
+        f"• Reference: {team_name}\n\n"
+        "Once your payment hits our account, we’ll send you a final confirmation via WhatsApp and email.\n\n"
+        "Get ready to smash it on the court! 💪\n\n"
+        "“Bring the game to life!”\n\n"
+        "Cheers,\n\n"
+        "NSL Badminton Tournament Team"
+    )
+
+    def _send():
+        try:
+            connection = get_connection(
+                fail_silently=True,
+                timeout=getattr(settings, 'EMAIL_TIMEOUT', 8),
+            )
+            send_mail(
+                subject=subject,
+                message=message,
+                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'netsmashersliverpool@gmail.com'),
+                recipient_list=recipients,
+                fail_silently=True,
+                connection=connection,
+            )
+        except Exception:
+            pass
+
+    if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ASYNC', True):
+        _send()
+        return
+
+    thread = threading.Thread(target=_send, daemon=True)
+    thread.start()
 
 def public_referee(request):
     return render(request, 'core/public_referee.html')
@@ -99,35 +151,7 @@ def public_register(request):
             if player2_email and player2_email.lower() != player1_email.lower():
                 recipients.append(player2_email)
 
-            subject = '🎉 You’re Almost In! NSL Badminton Tournament Registration'
-            message = (
-                "Hey Team! 🏸\n\n"
-                "Thanks for signing up for the NSL Badminton Tournament 2025! "
-                "Your registration details are safely with us.\n\n"
-                "Just a quick heads-up: slots are limited, and your spot is official only after the registration fee is received. "
-                "First to pay = first on the official teams list! ⏱️\n\n"
-                "Payment Info:\n\n"
-                "• Account Name: MR A J JOY\n\n"
-                "• Account Number: 89857653\n\n"
-                "• Sort Code: 09-01-28\n\n"
-                f"• Reference: {team_name}\n\n"
-                "Once your payment hits our account, we’ll send you a final confirmation via WhatsApp and email.\n\n"
-                "Get ready to smash it on the court! 💪\n\n"
-                "“Bring the game to life!”\n\n"
-                "Cheers,\n\n"
-                "NSL Badminton Tournament Team"
-            )
-
-            try:
-                send_mail(
-                    subject=subject,
-                    message=message,
-                    from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'netsmashersliverpool@gmail.com'),
-                    recipient_list=recipients,
-                    fail_silently=True,
-                )
-            except Exception:
-                pass
+            _send_registration_confirmation_email_async(recipients, team_name)
 
             return redirect('/register?success=1')
 
