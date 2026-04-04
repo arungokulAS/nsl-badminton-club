@@ -42,13 +42,16 @@ class AdminLiveManageTests(TestCase):
 		self.assertEqual(response.status_code, 200)
 		self.assertNotContains(response, 'Select Winner')
 		self.assertContains(response, 'Pending')
+		self.assertContains(response, 'Save')
 
-	def test_admin_live_manage_confirms_referee_score(self):
+	def test_admin_live_manage_save_and_edit_cycle(self):
 		response = self.client.post(
 			reverse('admin_live_manage'),
 			{
 				'match_id': self.match.id,
-				'action': 'confirm_score',
+				'action': 'save_score',
+				'team1_value': '40',
+				'team2_value': '35',
 			},
 			follow=True,
 		)
@@ -59,4 +62,24 @@ class AdminLiveManageTests(TestCase):
 		self.assertEqual(self.match.status, 'completed')
 		self.assertTrue(self.score.locked)
 		self.assertEqual(self.score.winner_id, self.team1.id)
+		self.assertEqual(self.score.team1_score, 40)
+		self.assertEqual(self.score.team2_score, 35)
 		self.assertContains(response, 'Confirmed')
+		self.assertContains(response, 'Edit')
+
+		edit_response = self.client.post(
+			reverse('admin_live_manage'),
+			{
+				'match_id': self.match.id,
+				'action': 'edit_score',
+			},
+			follow=True,
+		)
+
+		self.assertEqual(edit_response.status_code, 200)
+		self.match.refresh_from_db()
+		self.score.refresh_from_db()
+		self.assertEqual(self.match.status, 'awaiting_admin_confirmation')
+		self.assertFalse(self.score.locked)
+		self.assertContains(edit_response, 'Pending')
+		self.assertContains(edit_response, 'Save')

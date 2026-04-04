@@ -261,10 +261,6 @@ def admin_live_manage(request):
 	matches = matches.filter(status__in=['scheduled', 'awaiting_admin_confirmation', 'completed'])
 	scores = {s.match_id: s for s in Score.objects.filter(match__in=matches)}
 
-	def _recalculate_totals(score):
-		score.team1_score = (score.team1_set1 or 0) + (score.team1_set2 or 0) + (score.team1_set3 or 0)
-		score.team2_score = (score.team2_set1 or 0) + (score.team2_set2 or 0) + (score.team2_set3 or 0)
-
 	def _is_all_sets_submitted(score, sets_per_match):
 		return (
 			score.set1_submitted and
@@ -294,6 +290,15 @@ def admin_live_manage(request):
 			return None
 		return match.team1 if team1_sets > team2_sets else match.team2
 
+	def _attach_match_flags(match_queryset, score_map):
+		for listed_match in match_queryset:
+			score_obj = score_map.get(listed_match.id)
+			sets_per_match = max(1, min(listed_match.round.sets_per_match, 3))
+			listed_match.referee_ready = bool(score_obj and _is_all_sets_submitted(score_obj, sets_per_match))
+			listed_match.score_locked = bool(score_obj and score_obj.locked)
+
+	_attach_match_flags(matches, scores)
+
 	if request.method == 'POST':
 		try:
 			match_id_raw = request.POST.get('match_id')
@@ -304,7 +309,7 @@ def admin_live_manage(request):
 				return redirect('/admin/live-manage')
 			action = request.POST.get('action')
 
-			if action != 'confirm_score':
+			if action not in ('save_score', 'edit_score'):
 				messages.error(request, 'Invalid action.')
 				return redirect('/admin/live-manage')
 
@@ -318,25 +323,46 @@ def admin_live_manage(request):
 				if not score:
 					messages.error(request, 'Waiting for referee score submission.')
 					return redirect('/admin/live-manage')
+
+				if action == 'edit_score':
+					if score.locked:
+						score.locked = False
+						score.save(update_fields=['locked'])
+						match.status = 'awaiting_admin_confirmation'
+						match.save(update_fields=['status'])
+						messages.success(request, 'Score unlocked for editing.')
+					else:
+						messages.info(request, 'Score is already editable.')
+					return redirect('/admin/live-manage')
+
 				if score.locked:
-					messages.info(request, 'Score is already confirmed.')
+					messages.info(request, 'Score is already confirmed. Use Edit to modify.')
 					return redirect('/admin/live-manage')
 				if not _is_all_sets_submitted(score, sets_per_match):
-					messages.error(request, 'All set scores must be submitted by referee before confirmation.')
+					messages.error(request, 'All set scores must be submitted by referee before saving.')
 					return redirect('/admin/live-manage')
 
-				winner = _determine_winner_from_sets(match, score, sets_per_match)
-				if not winner:
-					messages.error(request, 'Unable to determine winner from submitted sets.')
+				team1_value_raw = request.POST.get('team1_value')
+				team2_value_raw = request.POST.get('team2_value')
+				try:
+					team1_value = int(team1_value_raw)
+					team2_value = int(team2_value_raw)
+				except (TypeError, ValueError):
+					messages.error(request, 'Invalid score values.')
+					return redirect('/admin/live-manage')
+				if team1_value == team2_value:
+					messages.error(request, 'Score cannot be tied.')
 					return redirect('/admin/live-manage')
 
+				winner = match.team1 if team1_value > team2_value else match.team2
+				score.team1_score = team1_value
+				score.team2_score = team2_value
 				score.winner = winner
 				score.locked = True
-				_recalculate_totals(score)
-				score.save()
+				score.save(update_fields=['team1_score', 'team2_score', 'winner', 'locked'])
 				match.status = 'completed'
 				match.save(update_fields=['status'])
-				messages.success(request, 'Score verified and confirmed.')
+				messages.success(request, 'Score saved and confirmed.')
 				return redirect('/admin/live-manage')
 		except Exception:
 			logger.exception('Admin live-manage submit failed')
@@ -374,7 +400,20 @@ def admin_live_manage_fragment(request):
 		matches = matches.filter(round=current_round)
 	# Show only pending/confirmed updates from referee
 	matches = matches.filter(status__in=['scheduled', 'awaiting_admin_confirmation', 'completed'])
-	scores = {s.match_id: s for s in Score.objects.all()}
+	scores = {s.match_id: s for s in Score.objects.filter(match__in=matches)}
+
+	def _is_all_sets_submitted(score, sets_per_match):
+		return (
+			score.set1_submitted and
+			(sets_per_match < 2 or score.set2_submitted) and
+			(sets_per_match < 3 or score.set3_submitted)
+		)
+
+	for listed_match in matches:
+		score_obj = scores.get(listed_match.id)
+		sets_per_match = max(1, min(listed_match.round.sets_per_match, 3))
+		listed_match.referee_ready = bool(score_obj and _is_all_sets_submitted(score_obj, sets_per_match))
+		listed_match.score_locked = bool(score_obj and score_obj.locked)
 
 	context = {
 		'matches': matches,
