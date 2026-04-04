@@ -82,33 +82,55 @@
                     <form method="post" class="score-entry-form">
                         {% csrf_token %}
                         <input type="hidden" name="match_id" value="{{ match.id }}">
-                        {% if match.partial_score %}
-                            <div style="width:100%;font-size:0.95rem;color:#cdd4ff;margin-bottom:8px;">
-                                {% if match.partial_score.set1_submitted %}
-                                    <span style="margin-right:14px;">Set 1: {{ match.partial_score.team1_set1 }} - {{ match.partial_score.team2_set1 }}</span>
-                                {% endif %}
-                                {% if match.partial_score.set2_submitted %}
-                                    <span style="margin-right:14px;">Set 2: {{ match.partial_score.team1_set2 }} - {{ match.partial_score.team2_set2 }}</span>
-                                {% endif %}
-                                {% if match.partial_score.set3_submitted %}
-                                    <span>Set 3: {{ match.partial_score.team1_set3 }} - {{ match.partial_score.team2_set3 }}</span>
-                                {% endif %}
-                            </div>
-                        {% endif %}
-                        {% if match.next_set_number %}
+                        {% if round.sets_per_match == 1 %}
                             <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;width:100%;">
-                                <div style="min-width:60px;font-weight:600;color:#cdd4ff;">Set {{ match.next_set_number }}</div>
-                                <input type="text" name="team1_set{{ match.next_set_number }}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                                <input type="text" name="team2_set{{ match.next_set_number }}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
-                                <select name="set_winner{{ match.next_set_number }}" required>
+                                <input type="text" name="team1_set1" value="{% if match.partial_score %}{{ match.partial_score.team1_set1|default:'' }}{% endif %}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <input type="text" name="team2_set1" value="{% if match.partial_score %}{{ match.partial_score.team2_set1|default:'' }}{% endif %}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                <select name="set_winner1" required>
                                     <option value="">Select Winner</option>
-                                    <option value="1">{{ match.team1.team_name }}</option>
-                                    <option value="2">{{ match.team2.team_name }}</option>
+                                    <option value="1" {% if match.partial_score and match.partial_score.winner_id == match.team1_id %}selected{% endif %}>{{ match.team1.team_name }}</option>
+                                    <option value="2" {% if match.partial_score and match.partial_score.winner_id == match.team2_id %}selected{% endif %}>{{ match.team2.team_name }}</option>
                                 </select>
-                                <button type="submit" name="submit_set" value="{{ match.next_set_number }}" style="padding:6px 14px;">Submit Set {{ match.next_set_number }}</button>
+                                <button type="submit" name="submit_set" value="1" style="padding:6px 14px;">Submit</button>
                             </div>
                         {% else %}
-                            <span class="submitted">All sets submitted, awaiting admin confirmation.</span>
+                            <div style="display:flex;flex-direction:column;gap:10px;width:100%;">
+                                {% for set_number in set_numbers %}
+                                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                                        <div style="min-width:60px;font-weight:600;color:#cdd4ff;">Set {{ set_number }}</div>
+                                        {% if set_number == 1 and match.partial_score and match.partial_score.set1_submitted %}
+                                            <input type="text" value="{{ match.partial_score.team1_set1 }}" readonly>
+                                            <input type="text" value="{{ match.partial_score.team2_set1 }}" readonly>
+                                            <span class="submitted">Submitted</span>
+                                        {% elif set_number == 2 and match.partial_score and match.partial_score.set2_submitted %}
+                                            <input type="text" value="{{ match.partial_score.team1_set2 }}" readonly>
+                                            <input type="text" value="{{ match.partial_score.team2_set2 }}" readonly>
+                                            <span class="submitted">Submitted</span>
+                                        {% elif set_number == 3 and match.partial_score and match.partial_score.set3_submitted %}
+                                            <input type="text" value="{{ match.partial_score.team1_set3 }}" readonly>
+                                            <input type="text" value="{{ match.partial_score.team2_set3 }}" readonly>
+                                            <span class="submitted">Submitted</span>
+                                        {% elif match.next_set_number == set_number %}
+                                            <input type="text" name="team1_set{{ set_number }}" placeholder="{{ match.team1.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                            <input type="text" name="team2_set{{ set_number }}" placeholder="{{ match.team2.team_name }}" required inputmode="numeric" pattern="\d{1,2}" maxlength="2" oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)">
+                                            <button type="submit" name="submit_set" value="{{ set_number }}" style="padding:6px 14px;">Submit</button>
+                                        {% else %}
+                                            <span class="submitted">Submit previous set first.</span>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                                {% if round.sets_per_match == 3 and match.all_sets_submitted %}
+                                    <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;">
+                                        <div style="font-weight:600;color:#cdd4ff;">Winner</div>
+                                        <select name="winner" required>
+                                            <option value="">Select Winner</option>
+                                            <option value="1" {% if match.partial_score and match.partial_score.winner_id == match.team1_id %}selected{% endif %}>{{ match.team1.team_name }}</option>
+                                            <option value="2" {% if match.partial_score and match.partial_score.winner_id == match.team2_id %}selected{% endif %}>{{ match.team2.team_name }}</option>
+                                        </select>
+                                        <button type="submit" name="submit_winner" value="1" style="padding:6px 14px;">Submit</button>
+                                    </div>
+                                {% endif %}
+                            </div>
                         {% endif %}
                     </form>
                     {% else %}

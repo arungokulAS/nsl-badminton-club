@@ -5,6 +5,7 @@ from matches.models import Match
 from results.models import Score
 from schedule.models import Court, Round
 from teams.models import Team
+from referee.tokens import generate_referee_token
 
 
 class AdminLiveManageTests(TestCase):
@@ -129,3 +130,82 @@ class AdminLiveManageTests(TestCase):
 		self.assertContains(response, self.team1.team_name, count=1)
 		self.assertContains(response, self.team2.team_name, count=1)
 		self.assertContains(response, 'name="action" value="save_set"', count=3)
+
+
+class RefereeCourtPageFlowTests(TestCase):
+	def setUp(self):
+		self.court = Court.objects.create(name='Court 1')
+		self.team1 = Team.objects.create(player1_name='P1A', player2_name='P1B', team_name='Ben & Cyril', is_locked=True)
+		self.team2 = Team.objects.create(player1_name='P2A', player2_name='P2B', team_name='Basil & Raicco', is_locked=True)
+
+	def _url_for(self, round_obj):
+		token = generate_referee_token(self.court.id, round_obj.id)
+		return reverse('referee_court_page', args=[self.court.id]) + f'?token={token}'
+
+	def test_referee_one_set_requires_winner_dropdown(self):
+		round_obj = Round.objects.create(name='Group Stage', order=1, sets_per_match=1, settings_locked=True, is_finished=False)
+		match = Match.objects.create(round=round_obj, team1=self.team1, team2=self.team2, court=self.court, status='scheduled')
+		url = self._url_for(round_obj)
+
+		get_response = self.client.get(url)
+		self.assertEqual(get_response.status_code, 200)
+		self.assertContains(get_response, 'Select Winner')
+
+		post_response = self.client.post(
+			url,
+			{
+				'match_id': match.id,
+				'submit_set': '1',
+				'team1_set1': '15',
+				'team2_set1': '12',
+				'set_winner1': '1',
+			},
+		)
+		self.assertEqual(post_response.status_code, 302)
+
+		score = Score.objects.get(match=match)
+		match.refresh_from_db()
+		self.assertTrue(score.set1_submitted)
+		self.assertEqual(score.winner_id, self.team1.id)
+		self.assertEqual(match.status, 'awaiting_admin_confirmation')
+
+	def test_referee_three_set_then_winner_submit(self):
+		round_obj = Round.objects.create(name='Group Stage', order=1, sets_per_match=3, settings_locked=True, is_finished=False)
+		match = Match.objects.create(round=round_obj, team1=self.team1, team2=self.team2, court=self.court, status='scheduled')
+		url = self._url_for(round_obj)
+
+		for payload in [
+			{'submit_set': '1', 'team1_set1': '15', 'team2_set1': '11'},
+			{'submit_set': '2', 'team1_set2': '12', 'team2_set2': '15'},
+			{'submit_set': '3', 'team1_set3': '15', 'team2_set3': '13'},
+		]:
+			data = {'match_id': match.id}
+			data.update(payload)
+			post_response = self.client.post(url, data)
+			self.assertEqual(post_response.status_code, 302)
+
+		score = Score.objects.get(match=match)
+		self.assertTrue(score.set1_submitted)
+		self.assertTrue(score.set2_submitted)
+		self.assertTrue(score.set3_submitted)
+		self.assertIsNone(score.winner)
+
+		winner_page = self.client.get(url)
+		self.assertEqual(winner_page.status_code, 200)
+		self.assertContains(winner_page, 'Winner')
+		self.assertContains(winner_page, 'name="winner"')
+
+		winner_submit = self.client.post(
+			url,
+			{
+				'match_id': match.id,
+				'submit_winner': '1',
+				'winner': '1',
+			},
+		)
+		self.assertEqual(winner_submit.status_code, 302)
+
+		score.refresh_from_db()
+		match.refresh_from_db()
+		self.assertEqual(score.winner_id, self.team1.id)
+		self.assertEqual(match.status, 'awaiting_admin_confirmation')
