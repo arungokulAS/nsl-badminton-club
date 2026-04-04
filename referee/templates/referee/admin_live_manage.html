@@ -118,6 +118,7 @@
 <script>
     const liveManageIntervalMs = 50000;
     const liveManageEndpoint = '/referee/admin/live-manage/fragment';
+    const liveManageScrollKey = 'adminLiveManageScrollY';
 
     let liveManageIsEditing = false;
     let liveManageResumeTimer = null;
@@ -182,9 +183,41 @@
     document.addEventListener('submit', (event) => {
         const container = document.getElementById('live-manage-table');
         if (container && container.contains(event.target)) {
+            try {
+                sessionStorage.setItem(liveManageScrollKey, String(window.scrollY || window.pageYOffset || 0));
+            } catch (error) {
+                console.warn('Unable to store live manage scroll position', error);
+            }
             setLiveManageEditing(false);
         }
     });
+
+    function restoreLiveManageScrollPosition() {
+        let savedY = null;
+        try {
+            savedY = sessionStorage.getItem(liveManageScrollKey);
+        } catch (error) {
+            console.warn('Unable to read live manage scroll position', error);
+            return;
+        }
+        if (!savedY) {
+            return;
+        }
+        const parsedY = parseInt(savedY, 10);
+        if (Number.isNaN(parsedY)) {
+            sessionStorage.removeItem(liveManageScrollKey);
+            return;
+        }
+        requestAnimationFrame(() => {
+            window.scrollTo({ top: parsedY, behavior: 'auto' });
+            setTimeout(() => {
+                window.scrollTo({ top: parsedY, behavior: 'auto' });
+            }, 80);
+        });
+        sessionStorage.removeItem(liveManageScrollKey);
+    }
+
+    restoreLiveManageScrollPosition();
 
     setInterval(refreshLiveManage, liveManageIntervalMs);
 </script>
