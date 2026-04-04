@@ -7,6 +7,8 @@ from schedule.models import Round, Court
 from teams.models import Team
 from groups.models import Group
 from matches.models import Match
+from results.models import Score
+from live.utils import build_qualifier_table
 
 class AdminScheduleViewTests(TestCase):
 	def setUp(self):
@@ -139,3 +141,48 @@ class AdminScheduleViewTests(TestCase):
 
 			updated_round = Round.objects.get(id=target_round.id)
 			self.assertFalse(updated_round.settings_locked)
+
+	def test_prequarter_schedule_pairs_seed_1_vs_16(self):
+		self.round1.is_finished = True
+		self.round1.save(update_fields=['is_finished'])
+		self.round2.is_finished = True
+		self.round2.save(update_fields=['is_finished'])
+		prequarter_round = Round.objects.create(name='Pre-Quarter', order=3)
+
+		teams = list(Team.objects.order_by('id')[:16])
+		for idx in range(0, 16, 2):
+			team1 = teams[idx]
+			team2 = teams[idx + 1]
+			match = Match.objects.create(
+				round=self.round2,
+				team1=team1,
+				team2=team2,
+				court=self.court1,
+				status='completed',
+			)
+			Score.objects.create(
+				match=match,
+				team1_score=21,
+				team2_score=10 + (idx // 2),
+				winner=team1,
+				locked=True,
+			)
+
+		response = self.client.post(
+			reverse('admin_schedule'),
+			{
+				'generate_schedule': '1',
+				'round': prequarter_round.id,
+				'num_courts': 4,
+			},
+			follow=True,
+		)
+
+		self.assertEqual(response.status_code, 200)
+		prequarter_matches = list(Match.objects.filter(round=prequarter_round).order_by('id'))
+		self.assertEqual(len(prequarter_matches), 8)
+
+		seeded_teams = [row['team'] for row in build_qualifier_table(self.round2)[:16]]
+		expected_pairings = [(seeded_teams[i], seeded_teams[-(i + 1)]) for i in range(8)]
+		actual_pairings = [(match.team1, match.team2) for match in prequarter_matches]
+		self.assertEqual(actual_pairings, expected_pairings)

@@ -45,6 +45,20 @@ def admin_schedule(request):
 			center = [court for court in courts_list if court.name in ('Court 3', 'Court 4', '3', '4')]
 		return center
 
+	def get_prequarter_seeded_teams():
+		qualifier_round = Round.objects.filter(name='Qualifier').first()
+		qualifier_table = build_qualifier_table(qualifier_round) if qualifier_round else []
+		seeded_teams = [row['team'] for row in qualifier_table[:16]]
+		if len(seeded_teams) >= 16:
+			return seeded_teams
+		fallback_teams = []
+		qualifier_matches = Match.objects.select_related('team1', 'team2').filter(round=qualifier_round).order_by('id') if qualifier_round else []
+		for match in qualifier_matches:
+			for team in (match.team1, match.team2):
+				if team and team not in fallback_teams:
+					fallback_teams.append(team)
+		return fallback_teams[:16]
+
 	def schedule_qualifier_round(next_round, courts):
 		from live.utils import build_group_tables
 		group_tables = build_group_tables()
@@ -197,53 +211,7 @@ def admin_schedule(request):
 					Match.objects.filter(round=next_round).delete()
 				schedule_qualifier_round(next_round, courts)
 			elif finish_round.order == 2:
-				qualifier_scores = Score.objects.select_related('match', 'match__team1', 'match__team2').filter(
-					match__round=finish_round,
-					locked=True,
-				)
-				qualifier_stats = {}
-				for score in qualifier_scores:
-					team1 = score.match.team1
-					team2 = score.match.team2
-					for team in (team1, team2):
-						if team and team.id not in qualifier_stats:
-							qualifier_stats[team.id] = {
-								'team': team,
-								'wins': 0,
-								'total_points': 0,
-								'points_for': 0,
-								'points_against': 0,
-								'points_diff': 0,
-							}
-					if not team1 or not team2:
-						continue
-					qualifier_stats[team1.id]['points_for'] += score.team1_score
-					qualifier_stats[team1.id]['points_against'] += score.team2_score
-					qualifier_stats[team2.id]['points_for'] += score.team2_score
-					qualifier_stats[team2.id]['points_against'] += score.team1_score
-					if score.team1_score > score.team2_score:
-						qualifier_stats[team1.id]['wins'] += 1
-						qualifier_stats[team1.id]['total_points'] += 2
-					elif score.team2_score > score.team1_score:
-						qualifier_stats[team2.id]['wins'] += 1
-						qualifier_stats[team2.id]['total_points'] += 2
-				for row in qualifier_stats.values():
-					row['points_diff'] = row['points_for'] - row['points_against']
-				sorted_rows = sorted(
-					qualifier_stats.values(),
-					key=lambda row: (row['total_points'], row['points_diff'], row['points_for'], row['wins'], row['team'].team_name),
-					reverse=True,
-				)
-				top_teams = [row['team'] for row in sorted_rows[:16]]
-				if len(top_teams) < 16:
-					fallback_teams = []
-					qualifier_matches = Match.objects.select_related('team1', 'team2').filter(round=finish_round).order_by('id')
-					for match in qualifier_matches:
-						for team in (match.team1, match.team2):
-							if team and team not in fallback_teams:
-								fallback_teams.append(team)
-					if len(fallback_teams) >= 16:
-						top_teams = fallback_teams[:16]
+				top_teams = get_prequarter_seeded_teams()
 				if len(top_teams) < 16:
 					messages.error(request, 'Pre-Quarter scheduling failed: not enough qualified teams.')
 				elif not courts:
@@ -264,7 +232,7 @@ def admin_schedule(request):
 							)
 					messages.success(request, 'Pre-Quarter round scheduled.')
 			elif finish_round.order == 3:
-				from live.utils import build_qualifier_table, build_prequarter_table
+				from live.utils import build_prequarter_table
 				qualifier_table = build_qualifier_table()
 				prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
 				ranked_winners = [row['team'] for row in prequarter_table if row.get('is_prequarter_qualified')]
@@ -410,7 +378,7 @@ def admin_schedule(request):
 		if not courts:
 			messages.error(request, 'Quarter regeneration failed: no courts available.')
 			return redirect(f'/admin/schedule?show_round={quarter_round.id}')
-		from live.utils import build_qualifier_table, build_prequarter_table
+		from live.utils import build_prequarter_table
 		qualifier_table = build_qualifier_table()
 		prequarter_table, prequarter_qualified = build_prequarter_table(rounds, qualifier_table)
 		ranked_winners = [row['team'] for row in prequarter_table if row.get('is_prequarter_qualified')]
@@ -685,20 +653,14 @@ def admin_schedule(request):
 			schedule_qualifier_round(next_round, courts)
 		# Pre-Quarter
 		elif next_round.order == 3:
-			# 12 qualifier winners + 4 best losers
-			qualifier_matches = Match.objects.filter(round__order=2)
-			winners = [Score.objects.filter(match=m, winner__isnull=False, locked=True).first().winner for m in qualifier_matches if Score.objects.filter(match=m, winner__isnull=False, locked=True).first()]
-			losers = [m.team1 if Score.objects.filter(match=m, locked=True).first().winner != m.team1 else m.team2 for m in qualifier_matches if Score.objects.filter(match=m, locked=True).first()]
-			# Rank losers
-			def score_total(team):
-				score = Score.objects.filter(match__team1=team, locked=True).first() or Score.objects.filter(match__team2=team, locked=True).first()
-				if not score:
-					return 0
-				return score.team1_score + score.team2_score
-			best_losers = sorted(losers, key=score_total, reverse=True)[:4]
-			teams = winners + best_losers
-			# High-vs-low seeding
-			teams.sort(key=lambda t: t.team_name)
+			teams = get_prequarter_seeded_teams()
+			if len(teams) < 16:
+				message = 'Pre-Quarter scheduling failed: not enough qualified teams.'
+				messages.error(request, message)
+				if request.headers.get('x-requested-with') == 'XMLHttpRequest':
+					from django.http import JsonResponse
+					return JsonResponse({'error': message}, status=400)
+				return redirect('/admin/schedule')
 			pairings = [(teams[i], teams[-(i+1)]) for i in range(8)]
 			with transaction.atomic():
 				for idx, (team1, team2) in enumerate(pairings):
