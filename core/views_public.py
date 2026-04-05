@@ -4,6 +4,9 @@ from django.core.mail import get_connection
 from django.core.mail import send_mail
 import threading
 import logging
+import json
+from urllib import error as urllib_error
+from urllib import request as urllib_request
 
 from groups.models import Group
 from matches.models import Match
@@ -29,11 +32,12 @@ def _send_registration_confirmation_email_async(recipients, team_name):
         return
     if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ENABLED', True):
         return
+    resend_api_key = getattr(settings, 'RESEND_API_KEY', '').strip()
     email_backend = getattr(settings, 'EMAIL_BACKEND', '')
     email_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
-    if 'smtp.EmailBackend' in email_backend and not email_password:
+    if not resend_api_key and 'smtp.EmailBackend' in email_backend and not email_password:
         logger.warning(
-            'Registration confirmation email skipped because EMAIL_HOST_PASSWORD is not configured. recipients=%s',
+            'Registration confirmation email skipped because no transport credentials are configured (SMTP password/API key). recipients=%s',
             recipients,
         )
         return
@@ -59,6 +63,29 @@ def _send_registration_confirmation_email_async(recipients, team_name):
 
     def _send():
         try:
+            if resend_api_key:
+                payload = {
+                    'from': getattr(settings, 'RESEND_FROM_EMAIL', '') or getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev'),
+                    'to': recipients,
+                    'subject': subject,
+                    'text': message,
+                }
+                req = urllib_request.Request(
+                    url='https://api.resend.com/emails',
+                    data=json.dumps(payload).encode('utf-8'),
+                    headers={
+                        'Authorization': f'Bearer {resend_api_key}',
+                        'Content-Type': 'application/json',
+                    },
+                    method='POST',
+                )
+                timeout = getattr(settings, 'EMAIL_TIMEOUT', 8)
+                with urllib_request.urlopen(req, timeout=timeout) as response:
+                    if response.status < 200 or response.status >= 300:
+                        body = response.read().decode('utf-8', errors='ignore')
+                        raise RuntimeError(f'Resend API returned {response.status}: {body}')
+                return
+
             connection = get_connection(
                 fail_silently=False,
                 timeout=getattr(settings, 'EMAIL_TIMEOUT', 8),
@@ -70,6 +97,18 @@ def _send_registration_confirmation_email_async(recipients, team_name):
                 recipient_list=recipients,
                 fail_silently=False,
                 connection=connection,
+            )
+        except urllib_error.HTTPError:
+            logger.exception(
+                'Registration confirmation email failed via Resend HTTP API for recipients=%s team=%s',
+                recipients,
+                team_name,
+            )
+        except urllib_error.URLError:
+            logger.exception(
+                'Registration confirmation email failed via Resend network error for recipients=%s team=%s',
+                recipients,
+                team_name,
             )
         except Exception:
             logger.exception(
