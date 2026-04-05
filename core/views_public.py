@@ -65,7 +65,7 @@ def _send_registration_confirmation_email_async(recipients, team_name):
         try:
             if resend_api_key:
                 payload = {
-                    'from': getattr(settings, 'RESEND_FROM_EMAIL', '') or getattr(settings, 'DEFAULT_FROM_EMAIL', 'onboarding@resend.dev'),
+                    'from': getattr(settings, 'RESEND_FROM_EMAIL', '') or 'onboarding@resend.dev',
                     'to': recipients,
                     'subject': subject,
                     'text': message,
