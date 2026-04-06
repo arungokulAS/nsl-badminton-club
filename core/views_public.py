@@ -74,8 +74,10 @@ def _send_registration_confirmation_email_async(recipients, team_name):
 
         for recipient in recipients:
             delivered = False
+            attempts_used = 0
 
             for attempt in range(1, max_attempts + 1):
+                attempts_used = attempt
                 try:
                     if resend_api_key:
                         payload = {
@@ -110,14 +112,22 @@ def _send_registration_confirmation_email_async(recipients, team_name):
 
                     delivered = True
                     break
-                except urllib_error.HTTPError:
+                except urllib_error.HTTPError as exc:
                     logger.exception(
-                        'Registration confirmation email failed via Resend HTTP API for recipient=%s team=%s attempt=%s/%s',
+                        'Registration confirmation email failed via Resend HTTP API for recipient=%s team=%s attempt=%s/%s status=%s',
                         recipient,
                         team_name,
                         attempt,
                         max_attempts,
+                        getattr(exc, 'code', 'unknown'),
                     )
+                    if getattr(exc, 'code', None) == 403:
+                        logger.warning(
+                            'Registration confirmation email retry stopped for recipient=%s team=%s due to Resend 403 (forbidden sender/recipient policy).',
+                            recipient,
+                            team_name,
+                        )
+                        break
                 except urllib_error.URLError:
                     logger.exception(
                         'Registration confirmation email failed via Resend network error for recipient=%s team=%s attempt=%s/%s',
@@ -141,7 +151,7 @@ def _send_registration_confirmation_email_async(recipients, team_name):
             if not delivered:
                 logger.warning(
                     'Registration confirmation email permanently failed after %s attempts for recipient=%s team=%s',
-                    max_attempts,
+                    attempts_used,
                     recipient,
                     team_name,
                 )

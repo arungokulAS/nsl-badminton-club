@@ -3,6 +3,8 @@ from django.test.utils import override_settings
 from django.urls import reverse
 from django.core import mail
 from unittest.mock import patch
+from io import BytesIO
+from urllib.error import HTTPError
 
 from core.models import TournamentRegistration
 
@@ -138,6 +140,52 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(second_response.status_code, 200)
 		self.assertContains(second_response, 'This form was already submitted. Duplicate submission was ignored.')
 		self.assertEqual(TournamentRegistration.objects.count(), 1)
+
+	@override_settings(
+		RESEND_API_KEY='re_test_key',
+		RESEND_FROM_EMAIL='onboarding@resend.dev',
+		REGISTRATION_CONFIRMATION_EMAIL_ASYNC=False,
+		REGISTRATION_CONFIRMATION_EMAIL_MAX_ATTEMPTS=8,
+		REGISTRATION_CONFIRMATION_EMAIL_RETRY_DELAY_SECONDS=0,
+	)
+	@patch('core.views_public.urllib_request.urlopen')
+	def test_register_resend_403_stops_retries_immediately(self, mock_urlopen):
+		mock_urlopen.side_effect = HTTPError(
+			url='https://api.resend.com/emails',
+			code=403,
+			msg='Forbidden',
+			hdrs=None,
+			fp=BytesIO(b'{"message":"Forbidden"}'),
+		)
+
+		response = self.client.post(
+			reverse('public_register'),
+			{
+				'player1_first_name': 'Arun',
+				'player1_last_name': 'Kumar',
+				'player1_category': 'A',
+				'player1_contact_number': '9999999999',
+				'player1_email': 'good@example.com',
+				'player1_city': 'Liverpool',
+				'player2_first_name': 'Ravi',
+				'player2_last_name': 'Das',
+				'player2_category': 'B',
+				'player2_contact_number': '8888888888',
+				'player2_email': 'bad@example.com',
+				'player2_city': 'Liverpool',
+				'emergency_contact_name': 'Suresh',
+				'emergency_contact_number': '7777777777',
+				'emergency_contact_relation': 'Brother',
+				'declaration_info_true': 'on',
+				'declaration_rules_agreed': 'on',
+				'media_consent': 'agree',
+			},
+			follow=True,
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(TournamentRegistration.objects.count(), 1)
+		self.assertEqual(mock_urlopen.call_count, 2)
 
 	def test_admin_registered_teams_requires_admin_session(self):
 		response = self.client.get(reverse('admin_registered_teams'))
