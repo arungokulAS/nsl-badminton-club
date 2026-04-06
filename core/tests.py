@@ -104,6 +104,41 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(TournamentRegistration.objects.count(), 1)
 		self.assertEqual(mock_send_mail.call_count, 4)
 
+	@override_settings(
+		EMAIL_BACKEND='django.core.mail.backends.locmem.EmailBackend',
+		REGISTRATION_CONFIRMATION_EMAIL_ASYNC=False,
+	)
+	def test_register_duplicate_submission_is_ignored(self):
+		payload = {
+			'player1_first_name': 'Arun',
+			'player1_last_name': 'Kumar',
+			'player1_category': 'A',
+			'player1_contact_number': '9999999999',
+			'player1_email': 'arun@example.com',
+			'player1_city': 'Liverpool',
+			'player2_first_name': 'Ravi',
+			'player2_last_name': 'Das',
+			'player2_category': 'B',
+			'player2_contact_number': '8888888888',
+			'player2_email': 'ravi@example.com',
+			'player2_city': 'Liverpool',
+			'emergency_contact_name': 'Suresh',
+			'emergency_contact_number': '7777777777',
+			'emergency_contact_relation': 'Brother',
+			'declaration_info_true': 'on',
+			'declaration_rules_agreed': 'on',
+			'media_consent': 'agree',
+		}
+
+		first_response = self.client.post(reverse('public_register'), payload, follow=True)
+		self.assertEqual(first_response.status_code, 200)
+		self.assertEqual(TournamentRegistration.objects.count(), 1)
+
+		second_response = self.client.post(reverse('public_register'), payload, follow=True)
+		self.assertEqual(second_response.status_code, 200)
+		self.assertContains(second_response, 'This form was already submitted. Duplicate submission was ignored.')
+		self.assertEqual(TournamentRegistration.objects.count(), 1)
+
 	def test_admin_registered_teams_requires_admin_session(self):
 		response = self.client.get(reverse('admin_registered_teams'))
 		self.assertEqual(response.status_code, 302)

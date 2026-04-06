@@ -57,13 +57,19 @@
             </div>
         {% endif %}
 
+        {% if already_submitted %}
+            <div style="background:rgba(255,193,7,0.2);border:1px solid rgba(255,193,7,0.45);color:#ffeeb8;padding:10px 12px;border-radius:12px;margin-bottom:14px;">
+                This form was already submitted. Duplicate submission was ignored.
+            </div>
+        {% endif %}
+
         {% if error %}
             <div style="background:rgba(255,107,107,0.18);border:1px solid rgba(255,107,107,0.45);color:#ffd6d6;padding:10px 12px;border-radius:12px;margin-bottom:14px;">
                 {{ error }}
             </div>
         {% endif %}
 
-        <form method="post" class="register-form-grid">
+        <form method="post" class="register-form-grid" id="public-register-form">
             {% csrf_token %}
             <div class="register-full-width" style="grid-column:1 / span 2;">
                 <h3 style="color:#fff;margin:0 0 4px 0;">Player 1</h3>
@@ -184,9 +190,28 @@
             </div>
 
             <div class="register-full-width" style="grid-column:1 / span 2;display:flex;justify-content:center;margin-top:6px;">
-                <button type="submit" style="border:none;border-radius:12px;padding:10px 24px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Submit Registration</button>
+                <button type="submit" id="register-submit-btn" style="border:none;border-radius:12px;padding:10px 24px;font-weight:700;color:#fff;background:linear-gradient(120deg,rgba(128,0,255,0.56),rgba(80,0,120,0.62));cursor:pointer;">Submit Registration</button>
             </div>
         </form>
     </div>
 </div>
+<script>
+    (function () {
+        const form = document.getElementById('public-register-form');
+        const submitButton = document.getElementById('register-submit-btn');
+        if (!form || !submitButton) {
+            return;
+        }
+
+        form.addEventListener('submit', function () {
+            if (submitButton.disabled) {
+                return;
+            }
+            submitButton.disabled = true;
+            submitButton.textContent = 'Submitting...';
+            submitButton.style.opacity = '0.7';
+            submitButton.style.cursor = 'not-allowed';
+        });
+    })();
+</script>
 {% endblock %}

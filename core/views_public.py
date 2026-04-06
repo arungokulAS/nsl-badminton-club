@@ -164,6 +164,20 @@ def public_register(request):
     valid_categories = {'A', 'B', 'C', 'D', 'E'}
     valid_relations = {'Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'}
 
+    def _render_register_form(*, form_data=None, error=None, success=False, already_submitted=False):
+        return render(
+            request,
+            'core/public_register.html',
+            {
+                'error': error,
+                'form_data': form_data or {},
+                'success': success,
+                'already_submitted': already_submitted,
+                'categories': sorted(valid_categories),
+                'relations': ['Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'],
+            },
+        )
+
     if request.method == 'POST':
         player1_first_name = request.POST.get('player1_first_name', '').strip()
         player1_last_name = request.POST.get('player1_last_name', '').strip()
@@ -209,6 +223,52 @@ def public_register(request):
 
         if all(required_fields) and player1_category in valid_categories and player2_category in valid_categories and emergency_contact_relation in valid_relations and declaration_info_true and declaration_rules_agreed and media_consent in valid_media_consents:
             team_name = f"{player1_first_name} {player1_last_name} / {player2_first_name} {player2_last_name}"
+
+            existing_registration = TournamentRegistration.objects.filter(
+                player1_first_name=player1_first_name,
+                player1_last_name=player1_last_name,
+                player1_category=player1_category,
+                player1_contact_number=player1_contact_number,
+                player1_email=player1_email,
+                player1_city=player1_city,
+                player2_first_name=player2_first_name,
+                player2_last_name=player2_last_name,
+                player2_category=player2_category,
+                player2_contact_number=player2_contact_number,
+                player2_email=player2_email,
+                player2_city=player2_city,
+                emergency_contact_name=emergency_contact_name,
+                emergency_contact_number=emergency_contact_number,
+                emergency_contact_relation=emergency_contact_relation,
+                declaration_confirmed=declaration_confirmed,
+                media_consent=media_consent,
+            ).exists()
+
+            if existing_registration:
+                return _render_register_form(
+                    form_data={
+                        'player1_first_name': player1_first_name,
+                        'player1_last_name': player1_last_name,
+                        'player1_category': player1_category,
+                        'player1_contact_number': player1_contact_number,
+                        'player1_email': player1_email,
+                        'player1_city': player1_city,
+                        'player2_first_name': player2_first_name,
+                        'player2_last_name': player2_last_name,
+                        'player2_category': player2_category,
+                        'player2_contact_number': player2_contact_number,
+                        'player2_email': player2_email,
+                        'player2_city': player2_city,
+                        'emergency_contact_name': emergency_contact_name,
+                        'emergency_contact_number': emergency_contact_number,
+                        'emergency_contact_relation': emergency_contact_relation,
+                        'declaration_info_true': declaration_info_true,
+                        'declaration_rules_agreed': declaration_rules_agreed,
+                        'media_consent': media_consent,
+                    },
+                    already_submitted=True,
+                )
+
             TournamentRegistration.objects.create(
                 team_name=team_name,
                 player1_first_name=player1_first_name,
@@ -238,47 +298,31 @@ def public_register(request):
 
             return redirect('/register?success=1')
 
-        return render(
-            request,
-            'core/public_register.html',
-            {
-                'error': 'Please complete all required fields, declaration, and consent options.',
-                'form_data': {
-                    'player1_first_name': player1_first_name,
-                    'player1_last_name': player1_last_name,
-                    'player1_category': player1_category,
-                    'player1_contact_number': player1_contact_number,
-                    'player1_email': player1_email,
-                    'player1_city': player1_city,
-                    'player2_first_name': player2_first_name,
-                    'player2_last_name': player2_last_name,
-                    'player2_category': player2_category,
-                    'player2_contact_number': player2_contact_number,
-                    'player2_email': player2_email,
-                    'player2_city': player2_city,
-                    'emergency_contact_name': emergency_contact_name,
-                    'emergency_contact_number': emergency_contact_number,
-                    'emergency_contact_relation': emergency_contact_relation,
-                    'declaration_info_true': declaration_info_true,
-                    'declaration_rules_agreed': declaration_rules_agreed,
-                    'media_consent': media_consent,
-                },
-                'success': request.GET.get('success') == '1',
-                'categories': sorted(valid_categories),
-                'relations': ['Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'],
+        return _render_register_form(
+            error='Please complete all required fields, declaration, and consent options.',
+            form_data={
+                'player1_first_name': player1_first_name,
+                'player1_last_name': player1_last_name,
+                'player1_category': player1_category,
+                'player1_contact_number': player1_contact_number,
+                'player1_email': player1_email,
+                'player1_city': player1_city,
+                'player2_first_name': player2_first_name,
+                'player2_last_name': player2_last_name,
+                'player2_category': player2_category,
+                'player2_contact_number': player2_contact_number,
+                'player2_email': player2_email,
+                'player2_city': player2_city,
+                'emergency_contact_name': emergency_contact_name,
+                'emergency_contact_number': emergency_contact_number,
+                'emergency_contact_relation': emergency_contact_relation,
+                'declaration_info_true': declaration_info_true,
+                'declaration_rules_agreed': declaration_rules_agreed,
+                'media_consent': media_consent,
             },
         )
 
-    return render(
-        request,
-        'core/public_register.html',
-        {
-            'success': request.GET.get('success') == '1',
-            'form_data': {},
-            'categories': ['A', 'B', 'C', 'D', 'E'],
-            'relations': ['Father', 'Brother', 'Sister', 'Mother', 'Wife', 'Friend'],
-        },
-    )
+    return _render_register_form(success=request.GET.get('success') == '1')
 
 def print_menu(request):
     teams = Team.objects.all().order_by('team_name')
