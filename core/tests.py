@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.test.utils import override_settings
 from django.urls import reverse
 from django.core import mail
+from unittest.mock import patch
 
 from core.models import TournamentRegistration
 
@@ -50,8 +51,58 @@ class PublicRegisterViewTests(TestCase):
 		self.assertEqual(registration.emergency_contact_relation, 'Brother')
 		self.assertTrue(registration.declaration_confirmed)
 		self.assertEqual(registration.media_consent, 'agree')
-		self.assertEqual(len(mail.outbox), 1)
+		self.assertEqual(len(mail.outbox), 2)
 		self.assertIn('NSL Badminton Tournament Registration', mail.outbox[0].subject)
+		self.assertEqual(set(mail.outbox[0].to + mail.outbox[1].to), {'arun@example.com', 'ravi@example.com'})
+
+	@override_settings(
+		EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend',
+		EMAIL_HOST_PASSWORD='dummy-password',
+		REGISTRATION_CONFIRMATION_EMAIL_ASYNC=False,
+		REGISTRATION_CONFIRMATION_EMAIL_MAX_ATTEMPTS=3,
+		REGISTRATION_CONFIRMATION_EMAIL_RETRY_DELAY_SECONDS=0,
+	)
+	@patch('core.views_public.send_mail')
+	@patch('core.views_public.get_connection')
+	def test_register_submission_ignores_failed_email_after_max_attempts(self, mock_get_connection, mock_send_mail):
+		mock_get_connection.return_value = object()
+
+		def _send_mail_side_effect(*args, **kwargs):
+			recipient = kwargs.get('recipient_list', [''])[0]
+			if recipient == 'bad@example.com':
+				raise RuntimeError('Invalid recipient')
+			return 1
+
+		mock_send_mail.side_effect = _send_mail_side_effect
+
+		response = self.client.post(
+			reverse('public_register'),
+			{
+				'player1_first_name': 'Arun',
+				'player1_last_name': 'Kumar',
+				'player1_category': 'A',
+				'player1_contact_number': '9999999999',
+				'player1_email': 'good@example.com',
+				'player1_city': 'Liverpool',
+				'player2_first_name': 'Ravi',
+				'player2_last_name': 'Das',
+				'player2_category': 'B',
+				'player2_contact_number': '8888888888',
+				'player2_email': 'bad@example.com',
+				'player2_city': 'Liverpool',
+				'emergency_contact_name': 'Suresh',
+				'emergency_contact_number': '7777777777',
+				'emergency_contact_relation': 'Brother',
+				'declaration_info_true': 'on',
+				'declaration_rules_agreed': 'on',
+				'media_consent': 'agree',
+			},
+			follow=True,
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(TournamentRegistration.objects.count(), 1)
+		self.assertEqual(mock_send_mail.call_count, 4)
 
 	def test_admin_registered_teams_requires_admin_session(self):
 		response = self.client.get(reverse('admin_registered_teams'))

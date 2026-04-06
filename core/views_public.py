@@ -5,6 +5,7 @@ from django.core.mail import send_mail
 import threading
 import logging
 import json
+import time
 from urllib import error as urllib_error
 from urllib import request as urllib_request
 
@@ -35,6 +36,8 @@ def _send_registration_confirmation_email_async(recipients, team_name):
     resend_api_key = getattr(settings, 'RESEND_API_KEY', '').strip()
     email_backend = getattr(settings, 'EMAIL_BACKEND', '')
     email_password = getattr(settings, 'EMAIL_HOST_PASSWORD', '')
+    max_attempts = max(1, int(getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_MAX_ATTEMPTS', 8)))
+    retry_delay_seconds = max(0.0, float(getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_RETRY_DELAY_SECONDS', 0.0)))
     if not resend_api_key and 'smtp.EmailBackend' in email_backend and not email_password:
         logger.warning(
             'Registration confirmation email skipped because no transport credentials are configured (SMTP password/API key). recipients=%s',
@@ -62,60 +65,86 @@ def _send_registration_confirmation_email_async(recipients, team_name):
     )
 
     def _send():
-        try:
-            if resend_api_key:
-                payload = {
-                    'from': getattr(settings, 'RESEND_FROM_EMAIL', '') or 'onboarding@resend.dev',
-                    'to': recipients,
-                    'subject': subject,
-                    'text': message,
-                }
-                req = urllib_request.Request(
-                    url='https://api.resend.com/emails',
-                    data=json.dumps(payload).encode('utf-8'),
-                    headers={
-                        'Authorization': f'Bearer {resend_api_key}',
-                        'Content-Type': 'application/json',
-                    },
-                    method='POST',
-                )
-                timeout = getattr(settings, 'EMAIL_TIMEOUT', 8)
-                with urllib_request.urlopen(req, timeout=timeout) as response:
-                    if response.status < 200 or response.status >= 300:
-                        body = response.read().decode('utf-8', errors='ignore')
-                        raise RuntimeError(f'Resend API returned {response.status}: {body}')
-                return
-
+        connection = None
+        if not resend_api_key:
             connection = get_connection(
                 fail_silently=False,
                 timeout=getattr(settings, 'EMAIL_TIMEOUT', 8),
             )
-            send_mail(
-                subject=subject,
-                message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'netsmashersliverpool@gmail.com'),
-                recipient_list=recipients,
-                fail_silently=False,
-                connection=connection,
-            )
-        except urllib_error.HTTPError:
-            logger.exception(
-                'Registration confirmation email failed via Resend HTTP API for recipients=%s team=%s',
-                recipients,
-                team_name,
-            )
-        except urllib_error.URLError:
-            logger.exception(
-                'Registration confirmation email failed via Resend network error for recipients=%s team=%s',
-                recipients,
-                team_name,
-            )
-        except Exception:
-            logger.exception(
-                'Registration confirmation email failed for recipients=%s team=%s',
-                recipients,
-                team_name,
-            )
+
+        for recipient in recipients:
+            delivered = False
+
+            for attempt in range(1, max_attempts + 1):
+                try:
+                    if resend_api_key:
+                        payload = {
+                            'from': getattr(settings, 'RESEND_FROM_EMAIL', '') or 'onboarding@resend.dev',
+                            'to': [recipient],
+                            'subject': subject,
+                            'text': message,
+                        }
+                        req = urllib_request.Request(
+                            url='https://api.resend.com/emails',
+                            data=json.dumps(payload).encode('utf-8'),
+                            headers={
+                                'Authorization': f'Bearer {resend_api_key}',
+                                'Content-Type': 'application/json',
+                            },
+                            method='POST',
+                        )
+                        timeout = getattr(settings, 'EMAIL_TIMEOUT', 8)
+                        with urllib_request.urlopen(req, timeout=timeout) as response:
+                            if response.status < 200 or response.status >= 300:
+                                body = response.read().decode('utf-8', errors='ignore')
+                                raise RuntimeError(f'Resend API returned {response.status}: {body}')
+                    else:
+                        send_mail(
+                            subject=subject,
+                            message=message,
+                            from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', 'netsmashersliverpool@gmail.com'),
+                            recipient_list=[recipient],
+                            fail_silently=False,
+                            connection=connection,
+                        )
+
+                    delivered = True
+                    break
+                except urllib_error.HTTPError:
+                    logger.exception(
+                        'Registration confirmation email failed via Resend HTTP API for recipient=%s team=%s attempt=%s/%s',
+                        recipient,
+                        team_name,
+                        attempt,
+                        max_attempts,
+                    )
+                except urllib_error.URLError:
+                    logger.exception(
+                        'Registration confirmation email failed via Resend network error for recipient=%s team=%s attempt=%s/%s',
+                        recipient,
+                        team_name,
+                        attempt,
+                        max_attempts,
+                    )
+                except Exception:
+                    logger.exception(
+                        'Registration confirmation email failed for recipient=%s team=%s attempt=%s/%s',
+                        recipient,
+                        team_name,
+                        attempt,
+                        max_attempts,
+                    )
+
+                if attempt < max_attempts and retry_delay_seconds > 0:
+                    time.sleep(retry_delay_seconds)
+
+            if not delivered:
+                logger.warning(
+                    'Registration confirmation email permanently failed after %s attempts for recipient=%s team=%s',
+                    max_attempts,
+                    recipient,
+                    team_name,
+                )
 
     if not getattr(settings, 'REGISTRATION_CONFIRMATION_EMAIL_ASYNC', True):
         _send()
