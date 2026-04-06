@@ -56,23 +56,31 @@
 .liquid-glass-navbar .nav-icon .icon-label {
   font-size: 0.82rem;
   font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
-  color: rgba(255,255,255,0.68);
-  margin-top: 2px;
+  color: #fff;
   font-weight: 500;
   letter-spacing: 0.01em;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 50%;
+  display: none;
+  white-space: nowrap;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(20, 20, 30, 0.85);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.28);
   opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transform: translateY(-4px);
+  transform: translateY(-50%) translateX(-6px);
   pointer-events: none;
-  transition: color 0.2s, opacity 0.2s, max-height 0.2s, transform 0.2s;
+  z-index: 1200;
+  transition: opacity 0.16s ease, transform 0.16s ease;
 }
 .liquid-glass-navbar .nav-icon:hover .icon-label,
-.liquid-glass-navbar .nav-icon:focus .icon-label {
-  color: #fff;
+.liquid-glass-navbar .nav-icon:focus .icon-label,
+.liquid-glass-navbar .nav-icon:focus-within .icon-label {
+  display: inline-block;
   opacity: 1;
-  max-height: 20px;
-  transform: translateY(0);
+  transform: translateY(-50%) translateX(0);
 }
 .liquid-glass-navbar .nav-icon:hover svg,
 .liquid-glass-navbar .nav-icon:focus svg {
