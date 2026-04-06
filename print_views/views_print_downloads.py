@@ -9,6 +9,7 @@ from groups.models import Group
 from matches.models import Match
 from schedule.models import Court, Round
 from teams.models import Team
+from core.models import TournamentRegistration
 
 
 def download_team_list_xlsx(request):
@@ -28,6 +29,45 @@ def download_team_list_xlsx(request):
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
     )
     response['Content-Disposition'] = 'attachment; filename="team_list.xlsx"'
+    return response
+
+
+def download_registered_teams_xlsx(request):
+    registrations = TournamentRegistration.objects.all().order_by('created_at', 'id')
+    workbook = Workbook()
+    sheet = workbook.active
+    sheet.title = 'Registered Teams'
+    sheet.append([
+        '#',
+        'Player 1',
+        'City/Location',
+        'Contact Number',
+        'Player 2',
+        'City/Location',
+        'Contact Number',
+    ])
+
+    for idx, registration in enumerate(registrations, start=1):
+        player1_name = f"{(registration.player1_first_name or '').strip()} {(registration.player1_last_name or '').strip()}".strip()
+        player2_name = f"{(registration.player2_first_name or '').strip()} {(registration.player2_last_name or '').strip()}".strip()
+        sheet.append([
+            idx,
+            player1_name,
+            registration.player1_city,
+            registration.player1_contact_number,
+            player2_name,
+            registration.player2_city,
+            registration.player2_contact_number,
+        ])
+
+    output = BytesIO()
+    workbook.save(output)
+    output.seek(0)
+    response = HttpResponse(
+        output.getvalue(),
+        content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    )
+    response['Content-Disposition'] = 'attachment; filename="registered_teams.xlsx"'
     return response
 
 

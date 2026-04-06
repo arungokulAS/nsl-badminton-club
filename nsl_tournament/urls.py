@@ -40,7 +40,8 @@ from print_views.views_print_group_standings import print_group_standings
 from print_views.views_print_referee_assignments import print_referee_assignments
 from print_views.views_print_schedule_overview import print_schedule_overview
 from print_views.views_print_emerging_teams import print_emerging_teams
-from print_views.views_print_downloads import download_group_list_xlsx, download_team_list_xlsx, download_schedule_xlsx, download_schedule_court_xlsx
+from print_views.views_print_downloads import download_group_list_xlsx, download_team_list_xlsx, download_schedule_xlsx, download_schedule_court_xlsx, download_registered_teams_xlsx
+from print_views.views_print_registered_teams import print_registered_teams
 from print_views.views_print_results import print_results
 from core.views_public import public_referee, public_contact, public_register, print_menu
 from core.views import admin_registered_teams
@@ -74,6 +75,8 @@ urlpatterns = [
     path('print/bracket', print_bracket, name='print_bracket'),
     path('print/teams', print_team_list, name='print_team_list'),
     path('print/teams.xlsx', download_team_list_xlsx, name='download_team_list_xlsx'),
+    path('print/registered-teams', print_registered_teams, name='print_registered_teams'),
+    path('print/registered-teams.xlsx', download_registered_teams_xlsx, name='download_registered_teams_xlsx'),
     path('print/matches', print_match_sheets, name='print_match_sheets'),
     path('print/groups', print_group_standings, name='print_group_standings'),
     path('print/emerging-teams', print_emerging_teams, name='print_emerging_teams'),
