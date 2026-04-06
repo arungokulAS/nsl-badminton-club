@@ -60,12 +60,19 @@
   margin-top: 2px;
   font-weight: 500;
   letter-spacing: 0.01em;
-  transition: color 0.2s, opacity 0.2s;
+  opacity: 0;
+  max-height: 0;
+  overflow: hidden;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: color 0.2s, opacity 0.2s, max-height 0.2s, transform 0.2s;
 }
 .liquid-glass-navbar .nav-icon:hover .icon-label,
 .liquid-glass-navbar .nav-icon:focus .icon-label {
   color: #fff;
   opacity: 1;
+  max-height: 20px;
+  transform: translateY(0);
 }
 .liquid-glass-navbar .nav-icon:hover svg,
 .liquid-glass-navbar .nav-icon:focus svg {
