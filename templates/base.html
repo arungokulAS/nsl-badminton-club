@@ -140,6 +140,30 @@
                 align-items: center;
                 justify-content: center;
             }
+            .liquid-glass-navbar .nav-icon .icon-label {
+                display: none !important;
+                position: absolute !important;
+                left: calc(100% + 8px) !important;
+                top: 50% !important;
+                transform: translateY(-50%) translateX(-6px) !important;
+                opacity: 0 !important;
+                white-space: nowrap !important;
+                padding: 4px 10px !important;
+                border-radius: 999px !important;
+                border: 1px solid rgba(255,255,255,0.25) !important;
+                background: rgba(20,20,30,0.88) !important;
+                color: #fff !important;
+                z-index: 1500 !important;
+                pointer-events: none !important;
+                transition: opacity 0.16s ease, transform 0.16s ease !important;
+            }
+            .liquid-glass-navbar .nav-icon:hover .icon-label,
+            .liquid-glass-navbar .nav-icon:focus .icon-label,
+            .liquid-glass-navbar .nav-icon:focus-within .icon-label {
+                display: inline-block !important;
+                opacity: 1 !important;
+                transform: translateY(-50%) translateX(0) !important;
+            }
             .nav-icon.active .liquid-glass-dropdown {
                 display: block;
             }
