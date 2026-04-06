@@ -92,10 +92,14 @@ def download_group_list_xlsx(request):
         bottom=Side(style='thin', color='BFA8FF'),
     )
     header_font = Font(bold=True, color='3D1A78')
-    center = Alignment(horizontal='center', vertical='center')
-    left = Alignment(horizontal='left', vertical='center')
+    center = Alignment(horizontal='center', vertical='center', wrap_text=True)
+    left = Alignment(horizontal='left', vertical='center', wrap_text=True)
 
-    column_positions = [1, 4, 7]
+    column_positions = [1, 2, 3]
+    uniform_column_width = 34
+    for column_index in column_positions:
+        sheet.column_dimensions[chr(64 + column_index)].width = uniform_column_width
+
     row_cursor = 1
     group_index = 0
     row_block_height = 0
@@ -103,7 +107,7 @@ def download_group_list_xlsx(request):
     for group in groups:
         col = column_positions[group_index % 3]
         if group_index % 3 == 0 and group_index > 0:
-            row_cursor += row_block_height + 2
+            row_cursor += row_block_height
             row_block_height = 0
 
         teams = list(group.teams.all().order_by('team_name'))
@@ -117,8 +121,7 @@ def download_group_list_xlsx(request):
         header_cell.fill = PatternFill(fill_type='solid', fgColor=pastel_palette[group_index % len(pastel_palette)])
         header_cell.border = border
 
-        sheet.row_dimensions[row_cursor].height = 22
-        sheet.column_dimensions[chr(64 + col)].width = 24
+        sheet.row_dimensions[row_cursor].height = 24
 
         for idx, team in enumerate(teams, start=1):
             cell = sheet.cell(row=row_cursor + idx, column=col, value=team.team_name)
