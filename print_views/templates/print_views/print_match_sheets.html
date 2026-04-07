@@ -520,6 +520,17 @@ async function downloadSectionPdf(sectionId, fileName) {
 
     const contentClone = section.cloneNode(true);
     contentClone.style.display = 'block';
+
+    contentClone.querySelectorAll('.export-all-sheets, .court-body, .match-panel').forEach((el) => {
+        el.style.display = 'block';
+    });
+
+    contentClone.querySelectorAll('.icon-actions, .match-list, .court-toggle-btn, .court-toggle-icon').forEach((el) => {
+        if (el && el.parentNode) {
+            el.parentNode.removeChild(el);
+        }
+    });
+
     exportWrapper.appendChild(exportStyle);
     exportWrapper.appendChild(contentClone);
     document.body.appendChild(exportWrapper);
@@ -528,7 +539,30 @@ async function downloadSectionPdf(sectionId, fileName) {
         margin: [8, 8, 8, 8],
         filename: fileName,
         image: { type: 'jpeg', quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true, backgroundColor: '#ffffff' },
+        html2canvas: {
+            scale: 2,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            onclone: (clonedDocument) => {
+                const root = clonedDocument.body;
+                root.style.background = '#ffffff';
+                root.style.color = '#111111';
+
+                root.querySelectorAll('*').forEach((el) => {
+                    if (el.tagName !== 'SVG' && el.tagName !== 'PATH' && el.tagName !== 'RECT') {
+                        el.style.color = '#111111';
+                    }
+                });
+
+                root.querySelectorAll('table, th, td, .line-field').forEach((el) => {
+                    el.style.borderColor = '#111111';
+                });
+
+                root.querySelectorAll('th, td').forEach((el) => {
+                    el.style.background = '#ffffff';
+                });
+            },
+        },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
         pagebreak: { mode: ['css', 'legacy'] },
     };
