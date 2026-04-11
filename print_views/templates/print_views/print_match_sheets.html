@@ -164,49 +164,84 @@
     .score-sheet {
         width: min(190mm, 100%);
         margin: 0 auto 12px auto;
-        color: #fff;
+        color: #111;
+        background: #fff;
+        border: 1px solid #111;
+        border-radius: 6px;
+        padding: 10mm 8mm 8mm;
         page-break-inside: avoid;
     }
     .score-sheet:last-child { margin-bottom: 0; }
-    .score-header { text-align: center; line-height: 1.1; margin-bottom: 5mm; }
-    .score-title { font-size: 19pt; font-weight: 800; }
-    .score-caption { font-size: 14pt; font-weight: 700; margin-top: 2pt; text-transform: uppercase; }
-    .score-top-fields,
-    .score-table { width: 100%; border-collapse: collapse; }
-    .score-top-fields { margin-bottom: 4mm; font-size: 10.5pt; }
-    .score-top-fields td,
-    .score-table th,
-    .score-table td {
-        border: 1px solid rgba(255,255,255,0.9);
-        color: #fff;
+    .score-header { text-align: center; line-height: 1.05; margin-bottom: 5mm; }
+    .score-title { font-size: 21pt; font-weight: 800; color: #111; }
+    .score-caption { font-size: 14pt; font-weight: 700; margin-top: 2pt; color: #111; text-transform: capitalize; }
+    .score-separator {
+        margin: 2.5mm auto 4mm;
+        width: 100%;
+        border-top: 1px solid #111;
+        position: relative;
     }
-    .score-top-fields td { padding: 6px 8px; }
-    .field-label { font-weight: 700; white-space: nowrap; }
-    .score-meta {
+    .score-separator::before,
+    .score-separator::after {
+        content: '◆';
+        position: absolute;
+        top: -10px;
+        font-size: 9px;
+        color: #111;
+    }
+    .score-separator::before { left: -1px; }
+    .score-separator::after { right: -1px; }
+    .score-meta-row {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 5px 14px;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 3mm;
         margin-bottom: 4mm;
-        font-size: 11pt;
     }
-    .score-table th,
-    .score-table td { text-align: center; padding: 3px 5px; }
-    .score-table th { background: rgba(255,255,255,0.08); font-weight: 700; }
-    .score-sheet.format-15 .score-table th,
-    .score-sheet.format-15 .score-table td { height: 22px; }
-    .score-sheet.format-21 .score-table th,
-    .score-sheet.format-21 .score-table td { height: 17px; }
-    .score-sheet.format-30 .score-table th,
-    .score-sheet.format-30 .score-table td { height: 11px; padding-top: 2px; padding-bottom: 2px; }
-    .score-total { font-weight: 700; background: rgba(255,255,255,0.08); }
-    .score-footer {
-        margin-top: 7mm;
+    .score-mini-table,
+    .team-score-table,
+    .result-sign-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    .score-mini-table td,
+    .team-score-table th,
+    .team-score-table td,
+    .result-sign-table td {
+        border: 1px solid #111;
+        color: #111;
+        background: #fff;
+        padding: 4px 6px;
+    }
+    .score-mini-table td { font-size: 10.5pt; }
+    .field-label { font-weight: 700; white-space: nowrap; width: 42%; }
+    .team-score-columns {
         display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 10mm;
-        font-size: 11pt;
+        grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+        gap: 3mm;
+        align-items: start;
+        margin-bottom: 4mm;
     }
-    .line-field { border-bottom: 1px solid rgba(255,255,255,0.9); height: 19px; margin-top: 5px; }
+    .vs-label {
+        font-size: 15pt;
+        font-weight: 700;
+        color: #111;
+        align-self: center;
+        padding: 0 4px;
+    }
+    .team-score-table th,
+    .team-score-table td { text-align: center; font-size: 10.5pt; }
+    .team-score-table th {
+        font-weight: 700;
+        font-size: 11pt;
+        padding: 5px 6px;
+    }
+    .team-score-table .point-index { width: 28%; font-weight: 600; }
+    .score-sheet.format-15 .team-score-table td { height: 18px; }
+    .score-sheet.format-21 .team-score-table td { height: 13px; }
+    .score-sheet.format-30 .team-score-table td { height: 9px; padding-top: 1px; padding-bottom: 1px; }
+    .score-total { font-weight: 700; }
+    .result-sign-table td:first-child { font-weight: 700; width: 36%; }
+    .result-sign-table td { font-size: 10.5pt; height: 23px; }
     .match-divider {
         margin: 12px 0;
         height: 1px;
@@ -225,16 +260,16 @@
         .score-sheet td,
         .score-sheet .score-title,
         .score-sheet .score-caption,
-        .score-sheet .score-meta,
-        .score-sheet .score-footer,
-        .score-sheet .score-top-fields td {
+        .score-sheet .score-mini-table td,
+        .score-sheet .team-score-table td,
+        .score-sheet .result-sign-table td {
             color: #111 !important;
             background: #fff !important;
         }
-        .score-sheet .score-top-fields td,
-        .score-sheet .score-table th,
-        .score-sheet .score-table td,
-        .score-sheet .line-field { border-color: #111 !important; }
+        .score-sheet .score-mini-table td,
+        .score-sheet .team-score-table th,
+        .score-sheet .team-score-table td,
+        .score-sheet .result-sign-table td { border-color: #111 !important; }
     }
 </style>
 
@@ -272,29 +307,39 @@
                     <div class="score-title">NSL Badminton Tournament</div>
                     <div class="score-caption">Score Sheet</div>
                 </div>
-                <table class="score-top-fields">
-                    <tr><td class="field-label">Game#</td><td></td><td class="field-label">Referee</td><td></td></tr>
-                    <tr><td class="field-label">Group</td><td></td><td class="field-label">Date</td><td></td></tr>
-                </table>
-                <div class="score-meta">
-                    <div><strong>Team 1:</strong></div>
-                    <div><strong>Team 2:</strong></div>
-                    <div><strong>Game Type:</strong> {{ blank_sheet.points }} Points</div>
-                    <div><strong>Court:</strong></div>
+                <div class="score-separator"></div>
+                <div class="score-meta-row">
+                    <table class="score-mini-table"><tr><td class="field-label">Game#</td><td></td></tr></table>
+                    <table class="score-mini-table"><tr><td class="field-label">Referee</td><td></td></tr></table>
+                    <table class="score-mini-table"><tr><td class="field-label">Group</td><td></td></tr></table>
                 </div>
-                <table class="score-table">
-                    <thead><tr><th style="width:12%;">Point</th><th>Team 1</th><th>Team 2</th></tr></thead>
-                    <tbody>
-                        {% for _ in blank_sheet.rows %}
-                        <tr><td>{{ forloop.counter }}</td><td></td><td></td></tr>
-                        {% endfor %}
-                        <tr class="score-total"><td>Total</td><td></td><td></td></tr>
-                    </tbody>
-                </table>
-                <div class="score-footer">
-                    <div>Winner Name<div class="line-field"></div></div>
-                    <div>Runner-Up Team Name<div class="line-field"></div></div>
+                <div class="team-score-columns">
+                    <table class="team-score-table">
+                        <thead><tr><th colspan="2">Team 1 (Team Name)</th></tr></thead>
+                        <tbody>
+                            {% for _ in blank_sheet.rows %}
+                            <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                            {% endfor %}
+                            <tr class="score-total"><td>Total Points</td><td></td></tr>
+                        </tbody>
+                    </table>
+                    <div class="vs-label">VS</div>
+                    <table class="team-score-table">
+                        <thead><tr><th colspan="2">Team 2 (Team Name)</th></tr></thead>
+                        <tbody>
+                            {% for _ in blank_sheet.rows %}
+                            <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                            {% endfor %}
+                            <tr class="score-total"><td>Total Points</td><td></td></tr>
+                        </tbody>
+                    </table>
                 </div>
+                <table class="result-sign-table">
+                    <tr><td>Name</td><td></td></tr>
+                    <tr><td>Referee</td><td></td></tr>
+                    <tr><td>Winners</td><td></td></tr>
+                    <tr><td>Challengers</td><td></td></tr>
+                </table>
             </div>
         </div>
         {% else %}
@@ -358,29 +403,39 @@
                                         <div class="score-title">NSL Badminton Tournament</div>
                                         <div class="score-caption">Score Sheet</div>
                                     </div>
-                                    <table class="score-top-fields">
-                                        <tr><td class="field-label">Game#</td><td>{{ sheet.match_no }}</td><td class="field-label">Referee</td><td></td></tr>
-                                        <tr><td class="field-label">Group</td><td>{{ sheet.group_name }}</td><td class="field-label">Date</td><td></td></tr>
-                                    </table>
-                                    <div class="score-meta">
-                                        <div><strong>Team 1:</strong> {{ sheet.team1_name }}</div>
-                                        <div><strong>Team 2:</strong> {{ sheet.team2_name }}</div>
-                                        <div><strong>Game Type:</strong> {{ sheet.points }} Points</div>
-                                        <div><strong>Court:</strong> {{ court.court_name }}</div>
+                                    <div class="score-separator"></div>
+                                    <div class="score-meta-row">
+                                        <table class="score-mini-table"><tr><td class="field-label">Game#</td><td>{{ sheet.match_no }}</td></tr></table>
+                                        <table class="score-mini-table"><tr><td class="field-label">Referee</td><td></td></tr></table>
+                                        <table class="score-mini-table"><tr><td class="field-label">Group</td><td>{{ sheet.group_name }}</td></tr></table>
                                     </div>
-                                    <table class="score-table">
-                                        <thead><tr><th style="width:12%;">Point</th><th>Team 1</th><th>Team 2</th></tr></thead>
-                                        <tbody>
-                                            {% for _ in sheet.rows %}
-                                            <tr><td>{{ forloop.counter }}</td><td></td><td></td></tr>
-                                            {% endfor %}
-                                            <tr class="score-total"><td>Total</td><td></td><td></td></tr>
-                                        </tbody>
-                                    </table>
-                                    <div class="score-footer">
-                                        <div>Winner Name<div class="line-field"></div></div>
-                                        <div>Runner-Up Team Name<div class="line-field"></div></div>
+                                    <div class="team-score-columns">
+                                        <table class="team-score-table">
+                                            <thead><tr><th colspan="2">Team 1 ({{ sheet.team1_name }})</th></tr></thead>
+                                            <tbody>
+                                                {% for _ in sheet.rows %}
+                                                <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                                                {% endfor %}
+                                                <tr class="score-total"><td>Total Points</td><td></td></tr>
+                                            </tbody>
+                                        </table>
+                                        <div class="vs-label">VS</div>
+                                        <table class="team-score-table">
+                                            <thead><tr><th colspan="2">Team 2 ({{ sheet.team2_name }})</th></tr></thead>
+                                            <tbody>
+                                                {% for _ in sheet.rows %}
+                                                <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                                                {% endfor %}
+                                                <tr class="score-total"><td>Total Points</td><td></td></tr>
+                                            </tbody>
+                                        </table>
                                     </div>
+                                    <table class="result-sign-table">
+                                        <tr><td>Name</td><td></td></tr>
+                                        <tr><td>Referee</td><td></td></tr>
+                                        <tr><td>Winners</td><td></td></tr>
+                                        <tr><td>Challengers</td><td></td></tr>
+                                    </table>
                                 </div>
                             </div>
                         </div>
@@ -393,29 +448,39 @@
                                     <div class="score-title">NSL Badminton Tournament</div>
                                     <div class="score-caption">Score Sheet</div>
                                 </div>
-                                <table class="score-top-fields">
-                                    <tr><td class="field-label">Game#</td><td>{{ sheet.match_no }}</td><td class="field-label">Referee</td><td></td></tr>
-                                    <tr><td class="field-label">Group</td><td>{{ sheet.group_name }}</td><td class="field-label">Date</td><td></td></tr>
-                                </table>
-                                <div class="score-meta">
-                                    <div><strong>Team 1:</strong> {{ sheet.team1_name }}</div>
-                                    <div><strong>Team 2:</strong> {{ sheet.team2_name }}</div>
-                                    <div><strong>Game Type:</strong> {{ sheet.points }} Points</div>
-                                    <div><strong>Court:</strong> {{ court.court_name }}</div>
+                                <div class="score-separator"></div>
+                                <div class="score-meta-row">
+                                    <table class="score-mini-table"><tr><td class="field-label">Game#</td><td>{{ sheet.match_no }}</td></tr></table>
+                                    <table class="score-mini-table"><tr><td class="field-label">Referee</td><td></td></tr></table>
+                                    <table class="score-mini-table"><tr><td class="field-label">Group</td><td>{{ sheet.group_name }}</td></tr></table>
                                 </div>
-                                <table class="score-table">
-                                    <thead><tr><th style="width:12%;">Point</th><th>Team 1</th><th>Team 2</th></tr></thead>
-                                    <tbody>
-                                        {% for _ in sheet.rows %}
-                                        <tr><td>{{ forloop.counter }}</td><td></td><td></td></tr>
-                                        {% endfor %}
-                                        <tr class="score-total"><td>Total</td><td></td><td></td></tr>
-                                    </tbody>
-                                </table>
-                                <div class="score-footer">
-                                    <div>Winner Name<div class="line-field"></div></div>
-                                    <div>Runner-Up Team Name<div class="line-field"></div></div>
+                                <div class="team-score-columns">
+                                    <table class="team-score-table">
+                                        <thead><tr><th colspan="2">Team 1 ({{ sheet.team1_name }})</th></tr></thead>
+                                        <tbody>
+                                            {% for _ in sheet.rows %}
+                                            <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                                            {% endfor %}
+                                            <tr class="score-total"><td>Total Points</td><td></td></tr>
+                                        </tbody>
+                                    </table>
+                                    <div class="vs-label">VS</div>
+                                    <table class="team-score-table">
+                                        <thead><tr><th colspan="2">Team 2 ({{ sheet.team2_name }})</th></tr></thead>
+                                        <tbody>
+                                            {% for _ in sheet.rows %}
+                                            <tr><td class="point-index">{{ forloop.counter }}</td><td></td></tr>
+                                            {% endfor %}
+                                            <tr class="score-total"><td>Total Points</td><td></td></tr>
+                                        </tbody>
+                                    </table>
                                 </div>
+                                <table class="result-sign-table">
+                                    <tr><td>Name</td><td></td></tr>
+                                    <tr><td>Referee</td><td></td></tr>
+                                    <tr><td>Winners</td><td></td></tr>
+                                    <tr><td>Challengers</td><td></td></tr>
+                                </table>
                             </div>
                             {% if not forloop.last %}<div class="match-divider"></div>{% endif %}
                             {% endfor %}
@@ -494,29 +559,9 @@ async function downloadSectionPdf(sectionId, fileName) {
 
     const exportWrapper = document.createElement('div');
     exportWrapper.style.background = '#fff';
-    exportWrapper.style.color = '#111';
-    exportWrapper.style.padding = '8mm';
-    exportWrapper.style.width = '190mm';
-
-    const exportStyle = document.createElement('style');
-    exportStyle.textContent = `
-        .score-sheet, .score-sheet table, .score-sheet th, .score-sheet td,
-        .score-sheet .score-title, .score-sheet .score-caption,
-        .score-sheet .score-meta, .score-sheet .score-footer,
-        .score-sheet .score-top-fields td {
-            color: #111 !important;
-            background: #fff !important;
-        }
-        .score-sheet .score-meta strong {
-            color: #111 !important;
-        }
-        .score-sheet .score-top-fields td,
-        .score-sheet .score-table th,
-        .score-sheet .score-table td,
-        .score-sheet .line-field {
-            border-color: #111 !important;
-        }
-    `;
+    exportWrapper.style.padding = '0';
+    exportWrapper.style.margin = '0 auto';
+    exportWrapper.style.width = '100%';
 
     const contentClone = section.cloneNode(true);
     contentClone.style.display = 'block';
@@ -525,46 +570,26 @@ async function downloadSectionPdf(sectionId, fileName) {
         el.style.display = 'block';
     });
 
-    contentClone.querySelectorAll('.icon-actions, .match-list, .court-toggle-btn, .court-toggle-icon').forEach((el) => {
+    contentClone.querySelectorAll('.icon-actions, .match-list, .court-toggle-btn').forEach((el) => {
         if (el && el.parentNode) {
             el.parentNode.removeChild(el);
         }
     });
 
-    exportWrapper.appendChild(exportStyle);
     exportWrapper.appendChild(contentClone);
     document.body.appendChild(exportWrapper);
 
     const options = {
-        margin: [8, 8, 8, 8],
+        margin: [10, 10, 10, 10],
         filename: fileName,
-        image: { type: 'jpeg', quality: 0.98 },
+        image: { type: 'jpeg', quality: 1 },
         html2canvas: {
-            scale: 2,
+            scale: 3,
             useCORS: true,
             backgroundColor: '#ffffff',
-            onclone: (clonedDocument) => {
-                const root = clonedDocument.body;
-                root.style.background = '#ffffff';
-                root.style.color = '#111111';
-
-                root.querySelectorAll('*').forEach((el) => {
-                    if (el.tagName !== 'SVG' && el.tagName !== 'PATH' && el.tagName !== 'RECT') {
-                        el.style.color = '#111111';
-                    }
-                });
-
-                root.querySelectorAll('table, th, td, .line-field').forEach((el) => {
-                    el.style.borderColor = '#111111';
-                });
-
-                root.querySelectorAll('th, td').forEach((el) => {
-                    el.style.background = '#ffffff';
-                });
-            },
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy'] },
+        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] },
     };
 
     window.html2pdf().set(options).from(exportWrapper).save().then(() => {

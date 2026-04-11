@@ -17,7 +17,8 @@ Including another URLconf
 from django.contrib import admin
 from django.urls import path, include
 from accounts.views import admin_login, admin_logout, admin_dashboard
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.templatetags.static import static
 
 from teams.views import admin_teams
 from groups.views import admin_groups
@@ -47,6 +48,9 @@ from core.views_public import public_referee, public_contact, public_register, p
 from core.views import admin_registered_teams
 
 urlpatterns = [
+    path('favicon.ico', lambda request: redirect(static('Untitled.png'), permanent=False)),
+    path('apple-touch-icon.png', lambda request: redirect(static('Untitled.png'), permanent=False)),
+    path('apple-touch-icon-precomposed.png', lambda request: redirect(static('Untitled.png'), permanent=False)),
     # Home page
     path('', lambda request: render(request, 'home.html'), name='home'),
     path('admin/login', admin_login, name='admin_login'),
