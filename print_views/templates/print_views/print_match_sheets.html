@@ -171,6 +171,14 @@
         padding: 10mm 8mm 8mm;
         page-break-inside: avoid;
     }
+    .score-sheet,
+    .score-sheet * {
+        color: #111 !important;
+        -webkit-text-fill-color: #111 !important;
+        text-shadow: none !important;
+        opacity: 1 !important;
+        mix-blend-mode: normal !important;
+    }
     .score-sheet:last-child { margin-bottom: 0; }
     .score-header { text-align: center; line-height: 1.05; margin-bottom: 5mm; }
     .score-title { font-size: 21pt; font-weight: 800; color: #111; }
@@ -562,6 +570,10 @@ async function downloadSectionPdf(sectionId, fileName) {
     exportWrapper.style.padding = '0';
     exportWrapper.style.margin = '0 auto';
     exportWrapper.style.width = '100%';
+    exportWrapper.style.position = 'fixed';
+    exportWrapper.style.top = '0';
+    exportWrapper.style.left = '0';
+    exportWrapper.style.zIndex = '-1';
 
     const contentClone = section.cloneNode(true);
     contentClone.style.display = 'block';
@@ -587,9 +599,23 @@ async function downloadSectionPdf(sectionId, fileName) {
             scale: 3,
             useCORS: true,
             backgroundColor: '#ffffff',
+            onclone: (doc) => {
+                doc.querySelectorAll('.score-sheet, .score-sheet *').forEach((el) => {
+                    el.style.color = '#111111';
+                    el.style.webkitTextFillColor = '#111111';
+                    el.style.textShadow = 'none';
+                    el.style.opacity = '1';
+                    el.style.filter = 'none';
+                    el.style.mixBlendMode = 'normal';
+                });
+                doc.querySelectorAll('.score-mini-table td, .team-score-table th, .team-score-table td, .result-sign-table td, .score-sheet').forEach((el) => {
+                    el.style.borderColor = '#111111';
+                    el.style.background = '#ffffff';
+                });
+            },
         },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
-        pagebreak: { mode: ['css', 'legacy', 'avoid-all'] },
+        pagebreak: { mode: ['css', 'legacy'] },
     };
 
     window.html2pdf().set(options).from(exportWrapper).save().then(() => {
